@@ -8,6 +8,7 @@ import { errorHandler } from './errors.js';
 import { categoryRoutes } from './routes/categories.js';
 import { goalRoutes } from './routes/goal.js';
 import { healthRoutes } from './routes/health.js';
+import { reconciliationRoutes } from './routes/reconciliations.js';
 import { settingsRoutes } from './routes/settings.js';
 import { summaryRoutes } from './routes/summary.js';
 import { transactionRoutes } from './routes/transactions.js';
@@ -38,6 +39,7 @@ export async function buildApp(
     goalRoutes,
     summaryRoutes,
     settingsRoutes,
+    reconciliationRoutes,
   ]) {
     await app.register(routes, { prefix: '/api' });
   }

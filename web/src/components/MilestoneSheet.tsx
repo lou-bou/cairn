@@ -49,6 +49,7 @@ export function useMoneyInput(
   /** Parse into API fields, or return field errors. */
   const parse = (
     amountKey: string,
+    { allowZero = false }: { allowZero?: boolean } = {},
   ): {
     values?: { amount: number; currency: Currency; rate: number };
     errors: Record<string, string>;
@@ -58,7 +59,7 @@ export function useMoneyInput(
     let parsedRate = defaultRate;
     try {
       parsedAmount = parseAmount(amount, currency);
-      if (parsedAmount === 0) errors[amountKey] = 'Amount must be greater than 0';
+      if (parsedAmount === 0 && !allowZero) errors[amountKey] = 'Amount must be greater than 0';
     } catch (e) {
       errors[amountKey] = e instanceof MoneyError ? e.message : 'Invalid amount';
     }
