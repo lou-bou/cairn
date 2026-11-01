@@ -1,14 +1,30 @@
 import fs from 'node:fs';
 import Fastify, { type FastifyInstance } from 'fastify';
 import fastifyStatic from '@fastify/static';
+import { parseRate } from '@cairn/shared';
 import type { Config } from './config.js';
+import { openDb, type Db } from './db/index.js';
+import { errorHandler } from './errors.js';
 import { healthRoutes } from './routes/health.js';
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    db: Db;
+    config: Config;
+  }
+}
 
 export async function buildApp(
   config: Config,
   opts: { logger?: boolean } = {},
 ): Promise<FastifyInstance> {
   const app = Fastify({ logger: opts.logger ?? false });
+
+  const db = openDb(config.dbPath, { defaultRateMilli: parseRate(config.defaultRate) });
+  app.decorate('db', db);
+  app.decorate('config', config);
+  app.addHook('onClose', async () => db.close());
+  app.setErrorHandler(errorHandler);
 
   await app.register(healthRoutes, { prefix: '/api' });
 

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../src/app.js';
+import { testConfig } from './helpers.js';
 
 describe('server shell', () => {
   let app: FastifyInstance;
@@ -12,13 +13,7 @@ describe('server shell', () => {
   beforeAll(async () => {
     webDist = fs.mkdtempSync(path.join(os.tmpdir(), 'cairn-web-'));
     fs.writeFileSync(path.join(webDist, 'index.html'), '<!doctype html><title>Cairn</title>');
-    app = await buildApp({
-      host: '127.0.0.1',
-      port: 0,
-      dbPath: ':memory:',
-      defaultRate: '275',
-      webDist,
-    });
+    app = await buildApp(testConfig({ webDist }));
   });
 
   afterAll(async () => {

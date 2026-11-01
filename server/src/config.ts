@@ -9,6 +9,7 @@ export interface Config {
   dbPath: string;
   defaultRate: string;
   webDist: string;
+  backupStatusPath: string;
 }
 
 function intFromEnv(name: string, fallback: number): number {
@@ -27,5 +28,6 @@ export function loadConfig(): Config {
     defaultRate: process.env.DEFAULT_RATE ?? '275',
     // src/ in dev, dist/ in prod: both sit one level below server/.
     webDist: process.env.WEB_DIST ?? path.resolve(here, '../../web/dist'),
+    backupStatusPath: process.env.BACKUP_STATUS_PATH ?? path.resolve('backups/status.json'),
   };
 }
