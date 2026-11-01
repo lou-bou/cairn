@@ -87,6 +87,14 @@ cairn/
 11. **Stats.** Summary cards, balance line with threshold lines, monthly grouped bars, category breakdowns, ranked lists, range selector.
 12. **Reconciliation.** Due logic (weekly or monthly, snooze), banner, count flow, adjustment transaction, history. AC 8.
 13. **Settings, export and import.** Rate, reminder settings, categories (read-only), JSON and CSV export, JSON merge-import with a preview screen and Replace / Keep both / Skip choices for conflicts. AC 11 round-trip and idempotency tests.
+**→ Migration to the ThinkPad (Debian home server).** Steps 1–13 are built and tested on the dev machine with `npm run dev`, without Docker. Then the repo moves to the ThinkPad, where Docker is tested for the first time with this checklist:
+- `id -u` is 1000. If it isn't, set the container user or `chown` `./data` to match.
+- `make up`, then `make ps` shows `cairn-app` as healthy.
+- `curl 127.0.0.1:$PORT/api/health` responds.
+- Check whether the tunnel runs on the same machine. If it doesn't, set `BIND_ADDR` to the ThinkPad's LAN IP.
+- Point the Cloudflare tunnel at the app and check access through the OTP login.
+- Open the app on the phone and the laptop, and install it as a PWA.
+
 14. **Backups.** Backup service, status endpoint and UI warning (older than 36h), restore command and its test. Run against a real rclone remote, or a local rclone remote in CI. AC 9.
 15. **Design pass.** Review each screen against the §14 rules and its "avoid" list at phone and laptop widths, in light and dark and in the test theme, and fix what falls short.
 16. **README.** Setup, Cloudflare tunnel pointing at `127.0.0.1:${PORT}`, rclone Google Drive setup, backup and restore, the AC checklist.
