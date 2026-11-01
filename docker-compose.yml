@@ -10,11 +10,13 @@ services:
     environment:
       PORT: ${PORT:-8080}
       DB_PATH: /data/cairn.db
+      BACKUP_STATUS_PATH: /backups/status.json
     ports:
       # Never expose publicly: Cloudflare Zero Trust is the only way in.
       - '${BIND_ADDR:-127.0.0.1}:${PORT:-8080}:${PORT:-8080}'
     volumes:
       - ./data:/data
+      - ./backups:/backups:ro
     healthcheck:
       test:
         - CMD
@@ -25,3 +27,23 @@ services:
       timeout: 5s
       start_period: 10s
       retries: 3
+
+  backup:
+    build: ./backup
+    image: cairn-backup
+    container_name: cairn-backup
+    restart: unless-stopped
+    # Run as the host user so backups are owned by you and the rclone config is readable.
+    user: '${UID:-1000}:${GID:-1000}'
+    environment:
+      TZ: ${TZ:-UTC}
+      BACKUP_CRON: ${BACKUP_CRON:-0 3 * * *}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+      RCLONE_REMOTE: ${RCLONE_REMOTE:-gdrive}
+      RCLONE_PATH: ${RCLONE_PATH:-cairn-backups}
+    volumes:
+      # Read-write: SQLite's .backup needs the WAL index (-shm) of a live database.
+      - ./data:/data
+      - ./backups:/backups
+      # Read-write so rclone can refresh the Google Drive token.
+      - ${RCLONE_CONFIG_DIR:-${HOME}/.config/rclone}:/config/rclone
