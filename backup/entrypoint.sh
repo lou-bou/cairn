@@ -4,4 +4,5 @@ set -eu
 if [ "$#" -gt 0 ]; then exec "$@"; fi
 echo "${BACKUP_CRON:-0 3 * * *} /usr/local/bin/backup.sh" > /tmp/crontab
 echo "cairn-backup: schedule '${BACKUP_CRON:-0 3 * * *}' (TZ=${TZ:-UTC})"
-exec supercronic /tmp/crontab
+# Absolute path: as PID 1, supercronic re-executes itself by argv[0] to reap child processes.
+exec "$(command -v supercronic)" /tmp/crontab
