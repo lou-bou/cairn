@@ -5,7 +5,12 @@ import { parseRate } from '@cairn/shared';
 import type { Config } from './config.js';
 import { openDb, type Db } from './db/index.js';
 import { errorHandler } from './errors.js';
+import { categoryRoutes } from './routes/categories.js';
+import { goalRoutes } from './routes/goal.js';
 import { healthRoutes } from './routes/health.js';
+import { settingsRoutes } from './routes/settings.js';
+import { summaryRoutes } from './routes/summary.js';
+import { transactionRoutes } from './routes/transactions.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -26,7 +31,16 @@ export async function buildApp(
   app.addHook('onClose', async () => db.close());
   app.setErrorHandler(errorHandler);
 
-  await app.register(healthRoutes, { prefix: '/api' });
+  for (const routes of [
+    healthRoutes,
+    categoryRoutes,
+    transactionRoutes,
+    goalRoutes,
+    summaryRoutes,
+    settingsRoutes,
+  ]) {
+    await app.register(routes, { prefix: '/api' });
+  }
 
   const hasWeb = fs.existsSync(config.webDist);
   if (hasWeb) {
