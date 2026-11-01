@@ -150,7 +150,7 @@ function TransactionForm({ arg, onClose }: { arg: OpenArg; onClose: () => void }
     }
   };
 
-  const title = editing ? 'Edit entry' : type === 'in' ? 'Money in' : 'Money out';
+  const title = editing ? 'Edit entry' : 'New entry';
 
   return (
     <Sheet
