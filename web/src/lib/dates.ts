@@ -11,9 +11,10 @@ export function formatDay(iso: string, today = todayIso()): string {
   return iso.slice(0, 4) === today.slice(0, 4) ? base : `${base} ${y}`;
 }
 
-export function formatMonth(key: string): string {
+/** "Sep", or "Sep 2026" when the year matters. */
+export function formatMonth(key: string, withYear = false): string {
   const [y, m] = key.split('-').map(Number) as [number, number];
-  return `${MONTHS[m - 1]} ${String(y).slice(2)}`;
+  return withYear ? `${MONTHS[m - 1]} ${y}` : MONTHS[m - 1]!;
 }
 
 /** Local date of an ISO timestamp. */

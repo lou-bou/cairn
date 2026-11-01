@@ -38,20 +38,24 @@
   --color-focus: #f2a922;
 
   /* Fixed category colors */
+
+  /* Validated with the dataviz palette checker (light surface): IN set and OUT set each pass. */
   --color-cat-income: #1d8049;
-  --color-cat-funding: #2a8f9c;
-  --color-cat-savings: #6f8f24;
-  --color-cat-other: #8a867d;
-  --color-cat-administrative: #4f73b8;
-  --color-cat-luxury: #b5508f;
-  --color-cat-living: #c2413a;
+  --color-cat-funding: #2b7fb8;
+  --color-cat-savings: #b0791c;
+  --color-cat-other: #8e5bc4;
+  --color-cat-administrative: #4d64c8;
+  --color-cat-luxury: #b8489e;
+  --color-cat-living: #d0573a;
 
   /* Charts and progress */
   --chart-grid: #ebe8e2;
   --chart-axis: #9a958b;
   --chart-line: #1c1b19;
-  --chart-in: var(--color-in);
-  --chart-out: var(--color-out);
+
+  /* Chart pair differs in lightness as well as hue, so it survives red-green colorblindness. */
+  --chart-in: #1f7a4d;
+  --chart-out: #e8846a;
   --chart-threshold: #cdc9c0;
   --chart-goal: var(--color-accent);
   --progress-track: #ebe8e1;
@@ -170,13 +174,15 @@
     --color-warning-text: #f5b13a;
     --color-warning-soft: #33270f;
     --color-focus: #f5b13a;
-    --color-cat-income: #4cbd78;
-    --color-cat-funding: #4fb6c3;
-    --color-cat-savings: #9cbc4a;
-    --color-cat-other: #a39f96;
-    --color-cat-administrative: #7d9de0;
-    --color-cat-luxury: #dd7db8;
-    --color-cat-living: #ec6b61;
+    --color-cat-income: #3fa96c;
+    --color-cat-funding: #4d97d4;
+    --color-cat-savings: #b88328;
+    --color-cat-other: #a47be0;
+    --color-cat-administrative: #6a7fe6;
+    --color-cat-luxury: #d464b8;
+    --color-cat-living: #de6a48;
+    --chart-in: #1c7446;
+    --chart-out: #d4735d;
     --chart-grid: #26241f;
     --chart-axis: #75716a;
     --chart-line: #f1efea;

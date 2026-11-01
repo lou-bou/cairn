@@ -1,0 +1,117 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.range {
+  align-self: flex-start;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  overflow: hidden;
+  background: var(--color-border);
+  border: var(--border-width) var(--border-style) var(--color-border);
+  border-radius: var(--radius-xl);
+  gap: var(--border-width);
+}
+
+@media (width >= 40rem) {
+  .tiles {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.tile {
+  padding: var(--space-4);
+  background: var(--color-surface);
+}
+
+.tileLabel {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+}
+
+.tileValue {
+  margin-top: var(--space-1);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.chart {
+  height: 15rem;
+}
+
+.chartShort {
+  height: 12rem;
+}
+
+.split {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (width >= 40rem) {
+  .split {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.ranking {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rankHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.rankName {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--weight-medium);
+}
+
+.rankSwatch {
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-xs);
+}
+
+.rankPct {
+  min-width: 3.25rem;
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.rankTrack {
+  height: var(--space-1-5);
+  margin-top: var(--space-1-5);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-pill);
+}
+
+.rankBar {
+  height: 100%;
+  border-radius: var(--radius-pill);
+}
+
+/* Chart text reads type tokens (SVG presentation attributes lose to CSS). */
+.chart :global(.recharts-text),
+.chartShort :global(.recharts-text) {
+  font-family: var(--font-numeric);
+  font-size: var(--text-2xs);
+}

@@ -1,0 +1,50 @@
+.tooltip {
+  min-width: 10rem;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: var(--border-width) var(--border-style) var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-float);
+  font-size: var(--text-xs);
+}
+
+.tooltipTitle {
+  margin-bottom: var(--space-1);
+  color: var(--color-text-muted);
+  font-weight: var(--weight-semibold);
+}
+
+.tooltipRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tooltipLabel {
+  flex: 1;
+  color: var(--color-text-muted);
+}
+
+.swatch {
+  width: var(--space-2);
+  height: var(--space-2);
+  flex-shrink: 0;
+  border-radius: var(--radius-xs);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  list-style: none;
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+}

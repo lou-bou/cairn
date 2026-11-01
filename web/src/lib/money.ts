@@ -35,3 +35,20 @@ export function useMoney() {
     },
   };
 }
+
+/** Short axis labels in display units: 250000 cents → "€2.5K", 37537500 centimes → "375K DA". */
+export function formatCompact(minor: number, currency: Currency): string {
+  const units = BigInt(Math.round(minor)) / 100n;
+  const negative = units < 0n;
+  const abs = negative ? -units : units;
+  const step = (div: bigint, suffix: string) => {
+    const tenths = (abs * 10n + div / 2n) / div;
+    const whole = tenths / 10n;
+    const frac = tenths % 10n;
+    return `${whole}${frac && whole < 100n ? `.${frac}` : ''}${suffix}`;
+  };
+  const body =
+    abs >= 1_000_000n ? step(1_000_000n, 'M') : abs >= 1000n ? step(1000n, 'K') : abs.toString();
+  const sign = negative ? '−' : '';
+  return currency === 'EUR' ? `${sign}€${body}` : `${sign}${body} DA`;
+}
