@@ -8,6 +8,9 @@ export default {
   allowEmptyInput: true,
   rules: {
     'selector-class-pattern': null,
+    'no-descending-specificity': null,
+    'property-no-vendor-prefix': null,
+    'selector-pseudo-class-no-unknown': [true, { ignorePseudoClasses: ['global'] }],
     'custom-property-pattern': null,
     'value-keyword-case': [
       'lower',
@@ -30,7 +33,7 @@ export default {
     'scale-unlimited/declaration-strict-value': [
       TOKEN_ONLY,
       {
-        ignoreValues: ['0', 'none', 'inherit', 'unset', 'initial', 'currentcolor', '50%'],
+        ignoreValues: ['0', 'none', 'inherit', 'unset', 'initial', 'currentColor', '50%'],
         disableFix: true,
       },
     ],

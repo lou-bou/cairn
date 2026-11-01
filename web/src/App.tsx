@@ -1,22 +1,22 @@
-import { useEffect, useState } from 'react';
-import { APP_NAME } from '@cairn/shared';
+import { Route, Routes } from 'react-router';
+import { AppShell } from './components/AppShell';
+import { DashboardPage } from './pages/Dashboard';
+import { GoalPage } from './pages/Goal';
+import { SettingsPage } from './pages/Settings';
+import { StatsPage } from './pages/Stats';
+import { TransactionsPage } from './pages/Transactions';
 
-type Health = 'checking' | 'ok' | 'down';
-
-// Placeholder shell until the design foundation (step 6) lands.
 export function App() {
-  const [health, setHealth] = useState<Health>('checking');
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then((res) => setHealth(res.ok ? 'ok' : 'down'))
-      .catch(() => setHealth('down'));
-  }, []);
-
   return (
-    <main>
-      <h1>{APP_NAME}</h1>
-      <p>Server: {health}</p>
-    </main>
+    <AppShell>
+      <Routes>
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/transactions" element={<TransactionsPage />} />
+        <Route path="/goal" element={<GoalPage />} />
+        <Route path="/stats" element={<StatsPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="*" element={<DashboardPage />} />
+      </Routes>
+    </AppShell>
   );
 }

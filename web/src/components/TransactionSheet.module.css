@@ -1,0 +1,57 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.type {
+  display: flex;
+  width: 100%;
+}
+
+.amountRow {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+.amount {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+}
+
+.rateLine {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: calc(var(--space-3) * -1);
+  font-size: var(--text-sm);
+}
+
+.rateField {
+  flex: 1;
+}
+
+.preview {
+  margin-top: calc(var(--space-3) * -1);
+  font-size: var(--text-sm);
+}
+
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-accent-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+}
