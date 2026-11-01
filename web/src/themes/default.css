@@ -148,49 +148,49 @@
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  [data-theme='default'] {
-    color-scheme: dark;
+/* Dark variant. data-scheme is set by lib/theme.ts (and an inline script in index.html) from the
+ * Appearance setting: System follows the OS, Light and Dark force it. */
+[data-theme='default'][data-scheme='dark'] {
+  color-scheme: dark;
 
-    --color-bg: #121211;
-    --color-surface: #1b1a18;
-    --color-surface-sunken: #0e0e0d;
-    --color-surface-hover: #23221f;
-    --color-border: #2c2a27;
-    --color-border-strong: #3d3a35;
-    --color-text: #f1efea;
-    --color-text-muted: #a39f96;
-    --color-text-faint: #75716a;
-    --color-overlay: rgb(0 0 0 / 55%);
-    --color-accent: #f5b13a;
-    --color-accent-hover: #f8c160;
-    --color-on-accent: #2a1d04;
-    --color-accent-text: #f5b13a;
-    --color-accent-soft: #33270f;
-    --color-in: #4cbd78;
-    --color-in-soft: #142b1d;
-    --color-out: #ec6b61;
-    --color-out-soft: #361816;
-    --color-warning-text: #f5b13a;
-    --color-warning-soft: #33270f;
-    --color-focus: #f5b13a;
-    --color-cat-income: #3fa96c;
-    --color-cat-funding: #4d97d4;
-    --color-cat-savings: #b88328;
-    --color-cat-other: #a47be0;
-    --color-cat-administrative: #6a7fe6;
-    --color-cat-luxury: #d464b8;
-    --color-cat-living: #de6a48;
-    --chart-in: #1c7446;
-    --chart-out: #d4735d;
-    --chart-grid: #26241f;
-    --chart-axis: #75716a;
-    --chart-line: #f1efea;
-    --chart-threshold: #3d3a35;
-    --progress-track: #2a2825;
-    --progress-marker: #1b1a18;
-    --progress-marker-border: #4a4740;
-    --logo-stone-middle: #6f6b63;
-    --shadow-float: 0 8px 28px rgb(0 0 0 / 50%), 0 1px 3px rgb(0 0 0 / 40%);
-  }
+  --color-bg: #121211;
+  --color-surface: #1b1a18;
+  --color-surface-sunken: #0e0e0d;
+  --color-surface-hover: #23221f;
+  --color-border: #2c2a27;
+  --color-border-strong: #3d3a35;
+  --color-text: #f1efea;
+  --color-text-muted: #a39f96;
+  --color-text-faint: #75716a;
+  --color-overlay: rgb(0 0 0 / 55%);
+  --color-accent: #f5b13a;
+  --color-accent-hover: #f8c160;
+  --color-on-accent: #2a1d04;
+  --color-accent-text: #f5b13a;
+  --color-accent-soft: #33270f;
+  --color-in: #4cbd78;
+  --color-in-soft: #142b1d;
+  --color-out: #ec6b61;
+  --color-out-soft: #361816;
+  --color-warning-text: #f5b13a;
+  --color-warning-soft: #33270f;
+  --color-focus: #f5b13a;
+  --color-cat-income: #3fa96c;
+  --color-cat-funding: #4d97d4;
+  --color-cat-savings: #b88328;
+  --color-cat-other: #a47be0;
+  --color-cat-administrative: #6a7fe6;
+  --color-cat-luxury: #d464b8;
+  --color-cat-living: #de6a48;
+  --chart-in: #1c7446;
+  --chart-out: #d4735d;
+  --chart-grid: #26241f;
+  --chart-axis: #75716a;
+  --chart-line: #f1efea;
+  --chart-threshold: #3d3a35;
+  --progress-track: #2a2825;
+  --progress-marker: #1b1a18;
+  --progress-marker-border: #4a4740;
+  --logo-stone-middle: #6f6b63;
+  --shadow-float: 0 8px 28px rgb(0 0 0 / 50%), 0 1px 3px rgb(0 0 0 / 40%);
 }

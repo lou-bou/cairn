@@ -27,7 +27,7 @@ import { formatDay, localDateOf } from '../lib/dates';
 import { useMoney } from '../lib/money';
 import { useOnline } from '../lib/online';
 import { availableThemes, SHOW_THEME_PICKER } from '../themes/registry';
-import { applyTheme, currentTheme } from '../lib/theme';
+import { applyScheme, applyTheme, currentTheme, savedScheme, type Scheme } from '../lib/theme';
 import styles from './Settings.module.css';
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -41,6 +41,7 @@ export function SettingsPage() {
       {settings && <ReminderCard settings={settings} />}
       <DataCard />
       <BackupCard />
+      <AppearanceCard />
       <CategoriesCard />
       {SHOW_THEME_PICKER && <ThemeCard />}
     </div>
@@ -339,6 +340,29 @@ function CategoriesCard() {
         ))}
       </div>
       <p className={styles.small}>Categories are fixed so totals stay comparable over time.</p>
+    </Card>
+  );
+}
+
+/** Light/dark is per device, like the display currency. */
+function AppearanceCard() {
+  const [scheme, setScheme] = useState<Scheme>(savedScheme());
+  return (
+    <Card>
+      <CardHeader title="Appearance" />
+      <Segmented
+        label="Appearance"
+        value={scheme}
+        onChange={(v) => {
+          setScheme(v);
+          applyScheme(v);
+        }}
+        options={[
+          { value: 'system', label: 'System' },
+          { value: 'light', label: 'Light' },
+          { value: 'dark', label: 'Dark' },
+        ]}
+      />
     </Card>
   );
 }

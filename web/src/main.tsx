@@ -13,7 +13,7 @@ import { ToastProvider } from './components/Toast';
 import { TransactionSheetProvider } from './components/TransactionSheet';
 import { PrefsProvider } from './lib/prefs';
 import { safeStorage } from './lib/storage';
-import { initTheme } from './lib/theme';
+import { initScheme, initTheme } from './lib/theme';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -38,6 +38,7 @@ const persister = createSyncStoragePersister({
 });
 
 await initTheme();
+initScheme();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

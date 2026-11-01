@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 /**
  * Read resolved token values for things that can't use CSS directly (chart libraries, canvas
- * confetti). Re-reads when data-theme or the color scheme changes.
+ * confetti). Re-reads when data-theme or data-scheme changes.
  */
 export function readToken(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -18,14 +18,11 @@ export function useTokens<K extends string>(names: readonly K[]): Record<K, stri
     const observer = new MutationObserver(update);
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['data-theme'],
+      attributeFilter: ['data-theme', 'data-scheme'],
     });
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    media.addEventListener('change', update);
     update();
     return () => {
       observer.disconnect();
-      media.removeEventListener('change', update);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
