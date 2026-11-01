@@ -71,6 +71,15 @@ function niceCeil(n: number): number {
   return step * pow;
 }
 
+/** Round axis ticks from 0: steps of 1, 2, 2.5 or 5 × 10ⁿ, about `count` of them. */
+function niceTicks(max: number, count = 5): number[] {
+  if (max <= 0) return [0];
+  const raw = max / count;
+  const pow = 10 ** Math.floor(Math.log10(raw));
+  const step = ([1, 2, 2.5, 5, 10].find((s) => s * pow >= raw) ?? 10) * pow;
+  return Array.from({ length: Math.ceil(max / step) + 1 }, (_, i) => i * step);
+}
+
 const fromDayNumber = (n: number) => new Date(n * 86_400_000).toISOString().slice(0, 10);
 
 export function StatsPage() {
@@ -291,6 +300,7 @@ function MonthlyChart({ summary }: { summary: Summary }) {
   const r = Number.parseInt(t['--radius-xs'], 10) || 0;
   const barRadius: [number, number, number, number] = [r, r, 0, 0];
   const multiYear = new Set(summary.monthly.map((m) => m.month.slice(0, 4))).size > 1;
+  const ticks = niceTicks(Math.max(0, ...data.flatMap((d) => [d.inD, d.outD])));
 
   return (
     <Card>
@@ -318,6 +328,8 @@ function MonthlyChart({ summary }: { summary: Summary }) {
               axisLine={{ stroke: t['--chart-grid'] }}
             />
             <YAxis
+              ticks={ticks}
+              domain={[0, ticks.at(-1) ?? 0]}
               tickFormatter={(v: number) => formatCompact(v, cur)}
               tick={{ fill: t['--color-text-muted'] }}
               tickLine={false}

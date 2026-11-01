@@ -102,11 +102,14 @@
 }
 
 .name {
+  display: -webkit-box;
   overflow: hidden;
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .meta {
