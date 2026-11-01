@@ -1,0 +1,170 @@
+.trail {
+  --trail-row: calc(var(--text-xs) * 1.4 + var(--space-2));
+
+  display: flex;
+  flex-direction: column;
+}
+
+.track {
+  position: relative;
+  height: var(--progress-height);
+  margin: calc((var(--progress-marker-size) - var(--progress-height)) / 2)
+    calc(var(--progress-marker-size) / 2);
+  background: var(--progress-track);
+  border-radius: var(--radius-pill);
+}
+
+.fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  min-width: var(--progress-height);
+  background: var(--progress-fill);
+  border-radius: var(--radius-pill);
+  transition: width var(--duration-slow) var(--ease-out);
+}
+
+.marker,
+.goalMarker {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  background: var(--progress-marker);
+  border: var(--border-width-strong) var(--border-style) var(--progress-marker-border);
+  border-radius: var(--radius-pill);
+}
+
+.marker {
+  width: calc(var(--progress-height) + var(--space-1));
+  height: calc(var(--progress-height) + var(--space-1));
+}
+
+.goalMarker {
+  left: 100%;
+  width: var(--progress-marker-size);
+  height: var(--progress-marker-size);
+  color: var(--color-accent-text);
+  border-color: var(--color-accent);
+}
+
+.goalMarker :global(.lucide) {
+  width: 65%;
+  height: 65%;
+  stroke-width: 3;
+}
+
+.done {
+  background: var(--progress-marker-done);
+  border-color: var(--progress-marker-done);
+}
+
+.markerSelected {
+  border-color: var(--color-accent-text);
+}
+
+.goalMarker.done {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.labels {
+  position: relative;
+  margin: var(--space-3) calc(var(--progress-marker-size) / 2) 0;
+}
+
+.leader {
+  position: absolute;
+  top: calc(var(--space-3) * -1);
+  width: var(--border-width);
+  background: var(--color-border-strong);
+}
+
+.label {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-0-5);
+  margin-left: calc(var(--border-width) * -1);
+  padding: 0 var(--space-1);
+  border: 0;
+  border-left: var(--border-width) var(--border-style) var(--color-border-strong);
+  border-radius: 0;
+  background: var(--color-surface);
+  color: var(--color-text-faint);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.labelDone {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+.labelCheck {
+  width: var(--text-xs);
+  height: var(--text-xs);
+  color: var(--color-in);
+  stroke-width: 3;
+}
+
+.labelSelected {
+  color: var(--color-accent-text);
+}
+
+.detail {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+  font-size: var(--text-sm);
+}
+
+.detailHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.badge,
+.badgeDone {
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.badge {
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}
+
+.badgeDone {
+  background: var(--color-in-soft);
+  color: var(--color-in);
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-2) 0 0;
+}
+
+.detailGrid dt {
+  color: var(--color-text-muted);
+}
+
+.detailGrid dd {
+  margin: 0;
+  text-align: right;
+}
+
+.detailNote {
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+}

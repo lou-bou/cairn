@@ -33,6 +33,11 @@ describe('server shell', () => {
     expect(res.json()).toEqual({ error: 'Not found' });
   });
 
+  it('returns 404 for missing assets rather than index.html', async () => {
+    const res = await app.inject({ method: 'GET', url: '/assets/missing-abc123.js' });
+    expect(res.statusCode).toBe(404);
+  });
+
   it('serves index.html for client-side routes', async () => {
     const res = await app.inject({ method: 'GET', url: '/stats' });
     expect(res.statusCode).toBe(200);

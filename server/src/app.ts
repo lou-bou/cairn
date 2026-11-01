@@ -44,12 +44,19 @@ export async function buildApp(
 
   const hasWeb = fs.existsSync(config.webDist);
   if (hasWeb) {
-    await app.register(fastifyStatic, { root: config.webDist, wildcard: false });
+    await app.register(fastifyStatic, { root: config.webDist });
   }
 
   app.setNotFoundHandler((req, reply) => {
     // SPA fallback: unknown non-API GETs get index.html so client-side routes work on reload.
-    if (hasWeb && req.method === 'GET' && !req.url.startsWith('/api/')) {
+    // Paths with a file extension (missing assets) get a real 404 instead of HTML.
+    const pathname = req.url.split('?')[0] ?? '';
+    if (
+      hasWeb &&
+      req.method === 'GET' &&
+      !pathname.startsWith('/api/') &&
+      !/\.[a-z0-9]+$/i.test(pathname)
+    ) {
       return reply.sendFile('index.html');
     }
     return reply.code(404).send({ error: 'Not found' });

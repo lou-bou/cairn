@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router';
 import { AppShell } from './components/AppShell';
+import { Celebrations } from './components/Celebrations';
 import { DashboardPage } from './pages/Dashboard';
 import { GoalPage } from './pages/Goal';
 import { SettingsPage } from './pages/Settings';
@@ -17,6 +18,7 @@ export function App() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<DashboardPage />} />
       </Routes>
+      <Celebrations />
     </AppShell>
   );
 }

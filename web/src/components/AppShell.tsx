@@ -13,6 +13,7 @@ import {
 import { useGoal } from '../api/hooks';
 import { useOnline } from '../lib/online';
 import { usePrefs } from '../lib/prefs';
+import { useLogoBounce } from '../lib/celebrate';
 import { Logo } from './Logo';
 import { Segmented } from './Form';
 import { useTransactionSheet } from './TransactionSheet';
@@ -61,12 +62,13 @@ function ConnectionPill() {
 export function AppShell({ children }: { children: ReactNode }) {
   const sheet = useTransactionSheet();
   const online = useOnline();
+  const bounce = useLogoBounce();
 
   return (
     <div className={styles.shell}>
       <aside className={styles.sidebar}>
         <NavLink to="/" className={styles.sidebarLogo} aria-label="Cairn home">
-          <Logo />
+          <Logo bounce={bounce} />
         </NavLink>
         <nav className={styles.sideNav} aria-label="Main">
           {NAV.map(({ to, label, icon: Icon, end }) => (
@@ -102,7 +104,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className={styles.main}>
         <header className={styles.header}>
           <NavLink to="/" className={styles.headerLogo} aria-label="Cairn home">
-            <Logo />
+            <Logo bounce={bounce} />
           </NavLink>
           <div className={styles.headerEnd}>
             <ConnectionPill />
