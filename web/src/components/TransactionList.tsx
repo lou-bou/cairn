@@ -1,4 +1,4 @@
-import type { Category, Transaction } from '@cairn/shared';
+import { sourceName, type Category, type Transaction } from '@cairn/shared';
 import { Scale } from 'lucide-react';
 import { useCategories } from '../api/hooks';
 import { categoryColor } from '../lib/categories';
@@ -34,9 +34,13 @@ export function TransactionRow({
         <span className={styles.main}>
           <span className={styles.title}>{title}</span>
           <span className={styles.meta}>
-            {tx.note ? category?.name : null}
-            {tx.note && showDate ? ' · ' : null}
-            {showDate && formatDay(tx.date)}
+            {[
+              tx.note ? category?.name : null,
+              tx.source !== 'other' ? sourceName(tx.source) : null,
+              showDate ? formatDay(tx.date) : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
             {tx.isAdjustment && (
               <span className={styles.adjustment}>
                 <Scale /> Adjustment

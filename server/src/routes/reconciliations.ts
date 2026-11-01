@@ -1,6 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync } from 'fastify';
-import { reconciliationInput, todayIso, toEurCents, type Reconciliation } from '@cairn/shared';
+import {
+  DEFAULT_SOURCE,
+  reconciliationInput,
+  todayIso,
+  toEurCents,
+  type Reconciliation,
+} from '@cairn/shared';
 import type { Db } from '../db/index.js';
 import { mutate } from '../domain/mutate.js';
 import { balanceEur, defaultRate, saveSettings } from '../domain/queries.js';
@@ -54,6 +60,7 @@ export const reconciliationRoutes: FastifyPluginAsync = async (app) => {
               currency: 'EUR',
               rate: defaultRate(db),
               categoryId: input.adjustment.categoryId,
+              source: DEFAULT_SOURCE,
               isAdjustment: true,
             },
             now,

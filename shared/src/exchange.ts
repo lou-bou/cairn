@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CURRENCIES } from './money.js';
+import { DEFAULT_SOURCE, SOURCE_IDS } from './sources.js';
 
 /** The JSON export format. `schemaVersion` changes only when the shape changes. */
 export const EXPORT_SCHEMA_VERSION = 1;
@@ -57,6 +58,8 @@ export const exportFile = z.object({
       rate: int.positive(),
       amountEur: int.nonnegative(),
       categoryId: z.string(),
+      // Optional so exports from before sources existed still import.
+      source: z.enum(SOURCE_IDS).default(DEFAULT_SOURCE),
       isAdjustment: z.boolean(),
       createdAt: z.string(),
       updatedAt: z.string(),

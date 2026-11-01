@@ -11,6 +11,7 @@ import type {
   ReconciliationInput,
   Settings,
   SettingsInput,
+  SourceId,
   Summary,
   Transaction,
   TransactionInput,
@@ -34,6 +35,7 @@ export interface TransactionFilters {
   type?: 'in' | 'out';
   categoryId?: string;
   currency?: 'EUR' | 'DZD';
+  source?: SourceId;
   from?: string;
   to?: string;
   q?: string;

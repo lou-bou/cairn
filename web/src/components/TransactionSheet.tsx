@@ -8,7 +8,9 @@ import {
   todayIso,
   toEurCents,
   MoneyError,
+  SOURCES,
   type Currency,
+  type SourceId,
   type Transaction,
   type TxType,
 } from '@cairn/shared';
@@ -36,6 +38,12 @@ interface SheetApi {
 }
 const SheetContext = createContext<SheetApi | null>(null);
 const LAST_CURRENCY = 'cairn.lastEntryCurrency';
+const LAST_SOURCE = 'cairn.lastEntrySource';
+
+function lastSource(): SourceId {
+  const saved = safeStorage.get(LAST_SOURCE);
+  return SOURCES.find((s) => s.id === saved)?.id ?? 'cash';
+}
 
 export function TransactionSheetProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<{ arg: OpenArg; key: number } | null>(null);
@@ -76,6 +84,7 @@ function TransactionForm({ arg, onClose }: { arg: OpenArg; onClose: () => void }
   const [rate, setRate] = useState(formatRate(editing?.rate ?? defaultRate));
   const [editRate, setEditRate] = useState(false);
   const [categoryId, setCategoryId] = useState(editing?.categoryId ?? '');
+  const [source, setSource] = useState<SourceId>(editing?.source ?? lastSource);
   const [date, setDate] = useState(editing?.date ?? todayIso());
   const [note, setNote] = useState(editing?.note ?? '');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -123,12 +132,14 @@ function TransactionForm({ arg, onClose }: { arg: OpenArg; onClose: () => void }
       currency,
       rate: rateMilli,
       categoryId,
+      source,
       isAdjustment: editing?.isAdjustment ?? false,
     };
     try {
       if (editing) await update.mutateAsync({ id: editing.id, ...body });
       else await create.mutateAsync(body);
       safeStorage.set(LAST_CURRENCY, currency);
+      safeStorage.set(LAST_SOURCE, source);
       toast.show(editing ? 'Saved' : type === 'in' ? 'Money in added' : 'Money out added');
       onClose();
     } catch (err) {
@@ -279,6 +290,16 @@ function TransactionForm({ arg, onClose }: { arg: OpenArg; onClose: () => void }
               label: c.name,
               swatch: categoryColor(c.id),
             }))}
+          />
+        </Field>
+
+        <Field label={type === 'in' ? 'Source' : 'Paid from'} error={errors.source}>
+          <Segmented
+            label={type === 'in' ? 'Source' : 'Paid from'}
+            value={source}
+            onChange={setSource}
+            className={styles.source}
+            options={SOURCES.map((s) => ({ value: s.id, label: s.name }))}
           />
         </Field>
 

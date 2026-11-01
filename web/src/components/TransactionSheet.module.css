@@ -9,6 +9,16 @@
   width: 100%;
 }
 
+/* Five sources share one row on a phone: equal widths, tighter side padding. */
+.source {
+  display: flex;
+  width: 100%;
+}
+
+.source > label {
+  padding: 0 var(--space-1);
+}
+
 .amountRow {
   display: flex;
   gap: var(--space-2);

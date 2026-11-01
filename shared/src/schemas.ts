@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { CURRENCIES, MAX_MINOR, MAX_RATE_MILLI } from './money.js';
 import { isIsoDate } from './dates.js';
+import { DEFAULT_SOURCE, SOURCE_IDS } from './sources.js';
 
 const isoDate = z.string().refine(isIsoDate, 'Use a valid date (YYYY-MM-DD)');
 const currency = z.enum(CURRENCIES, 'Currency must be EUR or DZD');
@@ -24,6 +25,7 @@ export const transactionInput = z.object({
   currency,
   rate: rate.optional(),
   categoryId: z.string('Choose a category').min(1, 'Choose a category'),
+  source: z.enum(SOURCE_IDS, 'Choose a source').default(DEFAULT_SOURCE),
   isAdjustment: z.boolean().default(false),
 });
 export type TransactionInput = z.input<typeof transactionInput>;
@@ -32,6 +34,7 @@ export const transactionQuery = z.object({
   type: z.enum(['in', 'out']).optional(),
   categoryId: z.string().optional(),
   currency: currency.optional(),
+  source: z.enum(SOURCE_IDS).optional(),
   from: isoDate.optional(),
   to: isoDate.optional(),
   q: z.string().trim().max(200).optional(),

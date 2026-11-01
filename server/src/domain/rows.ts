@@ -4,6 +4,7 @@ import type {
   GoalMode,
   Milestone,
   Reconciliation,
+  SourceId,
   Transaction,
   TxType,
 } from '@cairn/shared';
@@ -18,6 +19,7 @@ export interface TransactionRow {
   rate: number;
   amount_eur: number;
   category_id: string;
+  source: SourceId;
   is_adjustment: 0 | 1;
   created_at: string;
   updated_at: string;
@@ -71,6 +73,7 @@ export const toTransaction = (r: TransactionRow): Transaction => ({
   rate: r.rate,
   amountEur: r.amount_eur,
   categoryId: r.category_id,
+  source: r.source,
   isAdjustment: r.is_adjustment === 1,
   createdAt: r.created_at,
   updatedAt: r.updated_at,

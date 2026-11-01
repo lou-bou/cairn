@@ -1,6 +1,6 @@
 import { useDeferredValue, useState } from 'react';
 import { Minus, Plus, ReceiptText, Search, SlidersHorizontal, X } from 'lucide-react';
-import type { Currency, TxType } from '@cairn/shared';
+import { SOURCES, type Currency, type SourceId, type TxType } from '@cairn/shared';
 import { useCategories, useTransactions, type TransactionFilters } from '../api/hooks';
 import { PageHeader } from '../components/AppShell';
 import { Button } from '../components/Button';
@@ -20,6 +20,7 @@ export function TransactionsPage() {
   const [type, setType] = useState<TxType | 'all'>('all');
   const [categoryId, setCategoryId] = useState('');
   const [currency, setCurrency] = useState<Currency | ''>('');
+  const [source, setSource] = useState<SourceId | ''>('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [search, setSearch] = useState('');
@@ -31,6 +32,7 @@ export function TransactionsPage() {
     type: type === 'all' ? undefined : type,
     categoryId: categoryId || undefined,
     currency: currency || undefined,
+    source: source || undefined,
     from: from || undefined,
     to: to || undefined,
     q: q || undefined,
@@ -38,13 +40,14 @@ export function TransactionsPage() {
   };
   const { data, isPending } = useTransactions(filters);
   const activeCount =
-    [categoryId, currency, from, to].filter(Boolean).length + (type !== 'all' ? 1 : 0);
+    [categoryId, currency, source, from, to].filter(Boolean).length + (type !== 'all' ? 1 : 0);
   const visibleCategories = categories.filter((c) => type === 'all' || c.type === type);
 
   const clear = () => {
     setType('all');
     setCategoryId('');
     setCurrency('');
+    setSource('');
     setFrom('');
     setTo('');
     setSearch('');
@@ -131,15 +134,18 @@ export function TransactionsPage() {
                 ))}
               </Select>
             </Field>
-            <Field label="Entered in" htmlFor="f-cur">
+            <Field label="Source" htmlFor="f-src">
               <Select
-                id="f-cur"
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value as Currency | '')}
+                id="f-src"
+                value={source}
+                onChange={(e) => setSource(e.target.value as SourceId | '')}
               >
-                <option value="">Any currency</option>
-                <option value="EUR">EUR</option>
-                <option value="DZD">DZD</option>
+                <option value="">Any source</option>
+                {SOURCES.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
               </Select>
             </Field>
             <Field label="From" htmlFor="f-from">
@@ -159,6 +165,17 @@ export function TransactionsPage() {
                 min={from || undefined}
                 onChange={(e) => setTo(e.target.value)}
               />
+            </Field>
+            <Field label="Entered in" htmlFor="f-cur">
+              <Select
+                id="f-cur"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value as Currency | '')}
+              >
+                <option value="">Any currency</option>
+                <option value="EUR">EUR</option>
+                <option value="DZD">DZD</option>
+              </Select>
             </Field>
           </div>
           {(activeCount > 0 || search) && (

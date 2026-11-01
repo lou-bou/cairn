@@ -9,6 +9,29 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+
+  /* Feel like an app, not a web page: no grey/blue flash on tap (pressed states are styled). */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Tappable things: no double-tap zoom delay, no text selection or long-press callout. */
+button,
+a,
+label,
+summary,
+[role='button'] {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Installed app: no rubber-band bounce or pull-to-refresh on the page itself. */
+@media (display-mode: standalone) {
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
 }
 
 body {

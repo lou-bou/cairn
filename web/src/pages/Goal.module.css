@@ -97,7 +97,13 @@
   text-align: left;
 }
 
-.body:hover {
+@media (hover: hover) {
+  .body:hover {
+    background: var(--color-surface-hover);
+  }
+}
+
+.body:active {
   background: var(--color-surface-hover);
 }
 

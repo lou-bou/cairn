@@ -43,6 +43,25 @@ describe('database', () => {
     expect(rate).toBe('275000');
   });
 
+  it('gives transactions a source, defaulting to other, limited to the fixed list', () => {
+    const insert = (cols: string, values: string) => {
+      const id = crypto.randomUUID();
+      db.prepare(
+        `INSERT INTO transactions (id, type, date, amount_original, currency, rate, amount_eur,
+           category_id, created_at, updated_at${cols})
+         VALUES (?, 'in', '2026-11-01', 100, 'EUR', 275000, 100, 'income', 'x', 'x'${values})`,
+      ).run(id);
+      return id;
+    };
+    const id = insert('', '');
+    expect(db.prepare('SELECT source FROM transactions WHERE id = ?').pluck().get(id)).toBe(
+      'other',
+    );
+    expect(() => insert(', source', ", 'ccp'")).not.toThrow();
+    expect(() => insert(', source', ", 'paypal'")).toThrow(/CHECK/);
+    db.exec('DELETE FROM transactions');
+  });
+
   it('runs migrations only once', () => {
     expect(migrate(db, { defaultRateMilli: 275000, now: new Date().toISOString() })).toEqual([]);
     expect(db.prepare('SELECT COUNT(*) FROM milestones').pluck().get()).toBe(5);

@@ -1,5 +1,6 @@
 import type { Currency } from './money.js';
 import type { ReconcileFrequency } from './reconcile.js';
+import type { SourceId } from './sources.js';
 
 export type TxType = 'in' | 'out';
 export type GoalMode = 'auto' | 'custom';
@@ -22,6 +23,7 @@ export interface Transaction {
   rate: number;
   amountEur: number;
   categoryId: string;
+  source: SourceId;
   isAdjustment: boolean;
   createdAt: string;
   updatedAt: string;

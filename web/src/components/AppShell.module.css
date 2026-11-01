@@ -88,6 +88,10 @@
   transition: background var(--duration-fast) var(--ease-out);
 }
 
+.bottomLink:active .bottomIcon {
+  background: var(--color-surface-hover);
+}
+
 .bottomLink.active {
   color: var(--color-text);
   font-weight: var(--weight-semibold);

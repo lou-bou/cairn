@@ -1,5 +1,5 @@
 import type { Database } from 'better-sqlite3';
-import { CATEGORIES } from '@cairn/shared';
+import { CATEGORIES, DEFAULT_SOURCE, SOURCE_IDS } from '@cairn/shared';
 
 export interface MigrationContext {
   defaultRateMilli: number;
@@ -164,6 +164,18 @@ export const MIGRATIONS: Migration[] = [
       // Start the clock now, so the first reminder comes on the next scheduled day, not at install.
       setting.run('last_reconciled_at', now);
       setting.run('reconcile_snoozed_until', null);
+    },
+  },
+  {
+    version: 4,
+    name: 'transaction source',
+    up(db) {
+      // Existing entries can't know their source, so they start as the default and can be edited.
+      const list = SOURCE_IDS.map((s) => `'${s}'`).join(', ');
+      db.exec(
+        `ALTER TABLE transactions ADD COLUMN source TEXT NOT NULL DEFAULT '${DEFAULT_SOURCE}'
+           CHECK (source IN (${list}))`,
+      );
     },
   },
 ];

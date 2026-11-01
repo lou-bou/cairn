@@ -109,7 +109,13 @@
   font-size: var(--text-xs);
 }
 
-.segment:hover {
+@media (hover: hover) {
+  .segment:hover {
+    color: var(--color-text);
+  }
+}
+
+.segment:active {
   color: var(--color-text);
 }
 
@@ -153,7 +159,13 @@
   cursor: pointer;
 }
 
-.chip:hover {
+@media (hover: hover) {
+  .chip:hover {
+    background: var(--color-surface-hover);
+  }
+}
+
+.chip:active {
   background: var(--color-surface-hover);
 }
 
@@ -167,7 +179,13 @@
   color: var(--color-bg);
 }
 
-.chipSelected:hover {
+@media (hover: hover) {
+  .chipSelected:hover {
+    background: var(--color-text);
+  }
+}
+
+.chipSelected:active {
   background: var(--color-text);
 }
 

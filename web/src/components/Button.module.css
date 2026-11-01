@@ -18,7 +18,7 @@
 }
 
 .button:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: scale(0.97);
 }
 
 .button:disabled {
@@ -41,7 +41,13 @@
   color: var(--color-on-accent);
 }
 
-.primary:hover:not(:disabled) {
+@media (hover: hover) {
+  .primary:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+  }
+}
+
+.primary:active:not(:disabled) {
   background: var(--color-accent-hover);
 }
 
@@ -51,7 +57,13 @@
   color: var(--color-text);
 }
 
-.secondary:hover:not(:disabled) {
+@media (hover: hover) {
+  .secondary:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+  }
+}
+
+.secondary:active:not(:disabled) {
   background: var(--color-surface-hover);
 }
 
@@ -61,7 +73,14 @@
   box-shadow: none;
 }
 
-.ghost:hover:not(:disabled) {
+@media (hover: hover) {
+  .ghost:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+  }
+}
+
+.ghost:active:not(:disabled) {
   background: var(--color-surface-hover);
   color: var(--color-text);
 }
@@ -72,7 +91,13 @@
   color: var(--color-out);
 }
 
-.danger:hover:not(:disabled) {
+@media (hover: hover) {
+  .danger:hover:not(:disabled) {
+    background: var(--color-out-soft);
+  }
+}
+
+.danger:active:not(:disabled) {
   background: var(--color-out-soft);
 }
 
@@ -86,8 +111,15 @@
   color: var(--color-out);
 }
 
-.in:hover:not(:disabled),
-.out:hover:not(:disabled) {
+@media (hover: hover) {
+  .in:hover:not(:disabled),
+  .out:hover:not(:disabled) {
+    border-color: currentColor;
+  }
+}
+
+.in:active:not(:disabled),
+.out:active:not(:disabled) {
   border-color: currentColor;
 }
 
@@ -103,7 +135,14 @@
   color: var(--color-text-muted);
 }
 
-.iconButton:hover:not(:disabled) {
+@media (hover: hover) {
+  .iconButton:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+  }
+}
+
+.iconButton:active:not(:disabled) {
   background: var(--color-surface-hover);
   color: var(--color-text);
 }

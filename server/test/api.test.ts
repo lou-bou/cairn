@@ -83,6 +83,30 @@ describe('transactions', () => {
     });
   });
 
+  it('stores a source, defaults to other, filters by it and rejects unknown ones', async () => {
+    const { data: ccp } = await addTx({ source: 'ccp' });
+    expect(ccp.source).toBe('ccp');
+    const { data: plain } = await addTx();
+    expect(plain.source).toBe('other');
+    const { data: edited } = await call<Mutation<Transaction>>(
+      app,
+      'PUT',
+      `/api/transactions/${plain.id}`,
+      tx({ source: 'cash' }),
+    );
+    expect(edited.source).toBe('cash');
+    const list = await call<{ data: Transaction[] }>(app, 'GET', '/api/transactions?source=ccp');
+    expect(list.data.map((t) => t.id)).toEqual([ccp.id]);
+    const bad = await call<{ fields: Record<string, string> }>(
+      app,
+      'POST',
+      '/api/transactions',
+      tx({ source: 'paypal' }),
+      400,
+    );
+    expect(bad.fields.source).toBeTruthy();
+  });
+
   it('filters and searches notes', async () => {
     await addTx({ note: 'Freelance 50%' });
     await addTx({ note: 'Gift', categoryId: 'funding', date: '2026-10-01' });

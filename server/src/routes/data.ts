@@ -10,6 +10,7 @@ import {
   formatRate,
   importInput,
   isIsoDate,
+  sourceName,
   toEurCents,
   type ConflictChoice,
   type ExportFile,
@@ -84,6 +85,7 @@ export function transactionsCsv(db: Db): string {
     'currency',
     'rate_dzd_per_eur',
     'amount_eur',
+    'source',
     'note',
     'adjustment',
   ];
@@ -96,6 +98,7 @@ export function transactionsCsv(db: Db): string {
     t.currency,
     formatRate(t.rate),
     formatAmountInput(t.amountEur, 'EUR'),
+    sourceName(t.source),
     t.note,
     t.isAdjustment ? 'yes' : 'no',
   ]);
@@ -117,6 +120,7 @@ const txKey = (t: Tx) =>
     t.currency,
     t.rate,
     t.categoryId,
+    t.source,
     t.isAdjustment,
   ]);
 const msKey = (m: Ms) => JSON.stringify([m.name, m.note, m.costOriginal, m.currency, m.rate]);
@@ -280,14 +284,14 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
           // Transactions
           const insertTx = db.prepare(
             `INSERT INTO transactions (id, type, date, note, amount_original, currency, rate, amount_eur, category_id,
-             is_adjustment, created_at, updated_at)
+             source, is_adjustment, created_at, updated_at)
            VALUES (@id, @type, @date, @note, @amountOriginal, @currency, @rate, @amountEur, @categoryId,
-             @isAdjustment, @createdAt, @updatedAt)`,
+             @source, @isAdjustment, @createdAt, @updatedAt)`,
           );
           const updateTx = db.prepare(
             `UPDATE transactions SET type = @type, date = @date, note = @note, amount_original = @amountOriginal,
              currency = @currency, rate = @rate, amount_eur = @amountEur, category_id = @categoryId,
-             is_adjustment = @isAdjustment, created_at = @createdAt, updated_at = @updatedAt
+             source = @source, is_adjustment = @isAdjustment, created_at = @createdAt, updated_at = @updatedAt
            WHERE id = @id`,
           );
           const txParams = (t: Tx, id = t.id) => ({

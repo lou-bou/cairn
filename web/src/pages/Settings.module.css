@@ -58,7 +58,13 @@
   box-shadow: var(--shadow-button);
 }
 
-.linkButton:hover {
+@media (hover: hover) {
+  .linkButton:hover {
+    background: var(--color-surface-hover);
+  }
+}
+
+.linkButton:active {
   background: var(--color-surface-hover);
 }
 

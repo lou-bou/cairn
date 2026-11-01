@@ -20,7 +20,13 @@
   text-align: left;
 }
 
-.row:hover {
+@media (hover: hover) {
+  .row:hover {
+    background: var(--color-surface-hover);
+  }
+}
+
+.row:active {
   background: var(--color-surface-hover);
 }
 

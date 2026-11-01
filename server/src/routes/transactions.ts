@@ -40,6 +40,7 @@ export function txValues(db: Db, input: TxInput) {
     rate,
     amount_eur: toEurCents(input.amountOriginal, input.currency, rate),
     category_id: input.categoryId,
+    source: input.source,
     is_adjustment: input.isAdjustment ? 1 : 0,
   };
 }
@@ -52,9 +53,9 @@ export function insertTransaction(
 ): string {
   db.prepare(
     `INSERT INTO transactions (id, type, date, note, amount_original, currency, rate, amount_eur,
-       category_id, is_adjustment, created_at, updated_at)
+       category_id, source, is_adjustment, created_at, updated_at)
      VALUES (@id, @type, @date, @note, @amount_original, @currency, @rate, @amount_eur,
-       @category_id, @is_adjustment, @now, @now)`,
+       @category_id, @source, @is_adjustment, @now, @now)`,
   ).run({ id, now, ...txValues(db, input) });
   return id;
 }
@@ -77,6 +78,10 @@ export const transactionRoutes: FastifyPluginAsync = async (app) => {
     if (q.currency) {
       where.push('currency = @currency');
       params.currency = q.currency;
+    }
+    if (q.source) {
+      where.push('source = @source');
+      params.source = q.source;
     }
     if (q.from) {
       where.push('date >= @from');
@@ -128,7 +133,7 @@ export const transactionRoutes: FastifyPluginAsync = async (app) => {
         db.prepare(
           `UPDATE transactions SET type = @type, date = @date, note = @note, amount_original = @amount_original,
              currency = @currency, rate = @rate, amount_eur = @amount_eur, category_id = @category_id,
-             is_adjustment = @is_adjustment, updated_at = @now
+             source = @source, is_adjustment = @is_adjustment, updated_at = @now
            WHERE id = @id`,
         ).run({ id, now: new Date().toISOString(), ...txValues(db, input) });
       },

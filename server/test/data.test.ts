@@ -51,6 +51,7 @@ async function populate(app: FastifyInstance) {
     amountOriginal: 2750000,
     currency: 'DZD',
     note: 'Rent',
+    source: 'bna',
   });
   await call(
     app,
@@ -106,6 +107,19 @@ describe('export / import (AC 11)', () => {
     expect(preview.data.goalDiffers).toBe(false);
     await importAll(b, file);
     expect(strip(await exportOf(b))).toEqual(strip(after1));
+  });
+
+  it('keeps sources, and imports older exports without them as other', async () => {
+    await populate(a);
+    const file = await exportOf(a);
+    expect(file.transactions.map((t) => t.source).sort()).toEqual(['bna', 'other', 'other']);
+    const old = {
+      ...file,
+      // undefined is dropped when the request is serialized, like a file from before sources.
+      transactions: file.transactions.map((t) => ({ ...t, source: undefined })),
+    };
+    await importAll(b, old);
+    expect((await exportOf(b)).transactions.every((t) => t.source === 'other')).toBe(true);
   });
 
   it('matches seed milestones by id instead of duplicating them', async () => {
@@ -222,12 +236,12 @@ describe('export / import (AC 11)', () => {
     expect(res.headers['content-type']).toMatch(/text\/csv/);
     const lines = res.body.trim().split('\r\n');
     expect(lines[0]).toBe(
-      'id,date,type,category,amount,currency,rate_dzd_per_eur,amount_eur,note,adjustment',
+      'id,date,type,category,amount,currency,rate_dzd_per_eur,amount_eur,source,note,adjustment',
     );
     expect(
-      lines.some((l) => l.includes(',Income,1500.00,EUR,275,1500.00,"Salary, ""Oct""",no')),
+      lines.some((l) => l.includes(',Income,1500.00,EUR,275,1500.00,Other,"Salary, ""Oct""",no')),
     ).toBe(true);
-    expect(lines.some((l) => l.includes(',Living,27500,DZD,275,100.00,Rent,no'))).toBe(true);
+    expect(lines.some((l) => l.includes(',Living,27500,DZD,275,100.00,BNA,Rent,no'))).toBe(true);
   });
 
   it('backs up the database before a real import', async () => {
