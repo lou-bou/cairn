@@ -20,17 +20,23 @@
     "lint": "eslint . && stylelint \"web/src/**/*.css\"",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm test"
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
+    "brand": "node scripts/gen-brand.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@fontsource/nunito": "^5.3.0",
     "concurrently": "^10.0.6",
     "eslint": "^10.14.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.14.0",
+    "opentype.js": "^2.0.0",
+    "png-to-ico": "^3.0.2",
     "prettier": "^3.9.10",
+    "sharp": "^0.35.5",
     "stylelint": "^17.16.0",
     "stylelint-config-standard": "^40.0.0",
+    "stylelint-declaration-strict-value": "^1.12.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1",
     "vitest": "^5.0.5"

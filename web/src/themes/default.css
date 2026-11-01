@@ -1,0 +1,190 @@
+/*
+ * Cairn default theme: soft fintech on a minimal neutral base.
+ * Warm stone neutrals, one marigold accent, green/red only for money in/out.
+ *
+ * Every visual value in the app comes from these tokens. A theme is one file like this,
+ * scoped to [data-theme="<id>"] and registered in ./registry.ts.
+ */
+
+[data-theme='default'] {
+  color-scheme: light;
+
+  /* Neutrals */
+  --color-bg: #f6f5f2;
+  --color-surface: #fff;
+  --color-surface-sunken: #efede8;
+  --color-surface-hover: #f2f0ec;
+  --color-border: #e4e1da;
+  --color-border-strong: #cdc9c0;
+  --color-text: #1c1b19;
+  --color-text-muted: #6b675f;
+  --color-text-faint: #9a958b;
+  --color-overlay: rgb(28 27 25 / 40%);
+
+  /* The one accent */
+  --color-accent: #f2a922;
+  --color-accent-hover: #e39912;
+  --color-on-accent: #2a1d04;
+  --color-accent-text: #8a5a00;
+  --color-accent-soft: #fdf0d5;
+
+  /* Money semantics */
+  --color-in: #1d8049;
+  --color-in-soft: #e2f2e8;
+  --color-out: #c2413a;
+  --color-out-soft: #f8e4e1;
+  --color-warning-text: #8a5a00;
+  --color-warning-soft: #fdf0d5;
+  --color-focus: #f2a922;
+
+  /* Fixed category colors */
+  --color-cat-income: #1d8049;
+  --color-cat-funding: #2a8f9c;
+  --color-cat-savings: #6f8f24;
+  --color-cat-other: #8a867d;
+  --color-cat-administrative: #4f73b8;
+  --color-cat-luxury: #b5508f;
+  --color-cat-living: #c2413a;
+
+  /* Charts and progress */
+  --chart-grid: #ebe8e2;
+  --chart-axis: #9a958b;
+  --chart-line: #1c1b19;
+  --chart-in: var(--color-in);
+  --chart-out: var(--color-out);
+  --chart-threshold: #cdc9c0;
+  --chart-goal: var(--color-accent);
+  --progress-track: #ebe8e1;
+  --progress-fill: var(--color-accent);
+  --progress-marker: #fff;
+  --progress-marker-border: #cdc9c0;
+  --progress-marker-done: var(--color-text);
+
+  /* Logo */
+  --logo-stone-base: var(--color-text);
+  --logo-stone-middle: #a39e94;
+  --logo-stone-top: var(--color-accent);
+  --logo-face: var(--color-on-accent);
+
+  /* Type */
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Nunito Variable', 'Inter Variable', ui-rounded, system-ui, sans-serif;
+  --font-numeric: var(--font-sans);
+  --numeric-features: 'tnum' 1, 'lnum' 1, 'cv11' 1;
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.5rem;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-display: 800;
+  --leading-tight: 1.15;
+  --leading-normal: 1.45;
+  --tracking-tight: -0.02em;
+  --tracking-caps: 0.06em;
+  --wordmark-tracking: -0.01em;
+
+  /* Space (4px base) */
+  --space-px: 1px;
+  --space-0-5: 0.125rem;
+  --space-1: 0.25rem;
+  --space-1-5: 0.375rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Shape */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+  --border-width: 1px;
+  --border-width-strong: 2px;
+  --border-style: solid;
+  --focus-ring-width: 3px;
+
+  /* Elevation: flat by default, only floating layers get a shadow */
+  --shadow-card: none;
+  --shadow-float: 0 8px 28px rgb(28 27 25 / 12%), 0 1px 3px rgb(28 27 25 / 8%);
+  --shadow-button: none;
+
+  /* Sizing and density */
+  --control-height: 2.75rem;
+  --control-height-sm: 2.25rem;
+  --icon-size: 1.25rem;
+  --icon-size-sm: 1rem;
+  --icon-stroke: 1.75;
+  --progress-height: 0.75rem;
+  --progress-marker-size: 1.125rem;
+  --content-max: 46rem;
+  --sidebar-width: 15rem;
+  --bottom-nav-height: 4rem;
+  --header-height: 3.5rem;
+  --density-row-y: var(--space-3);
+
+  /* Motion */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 360ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme='default'] {
+    color-scheme: dark;
+
+    --color-bg: #121211;
+    --color-surface: #1b1a18;
+    --color-surface-sunken: #0e0e0d;
+    --color-surface-hover: #23221f;
+    --color-border: #2c2a27;
+    --color-border-strong: #3d3a35;
+    --color-text: #f1efea;
+    --color-text-muted: #a39f96;
+    --color-text-faint: #75716a;
+    --color-overlay: rgb(0 0 0 / 55%);
+    --color-accent: #f5b13a;
+    --color-accent-hover: #f8c160;
+    --color-on-accent: #2a1d04;
+    --color-accent-text: #f5b13a;
+    --color-accent-soft: #33270f;
+    --color-in: #4cbd78;
+    --color-in-soft: #142b1d;
+    --color-out: #ec6b61;
+    --color-out-soft: #361816;
+    --color-warning-text: #f5b13a;
+    --color-warning-soft: #33270f;
+    --color-focus: #f5b13a;
+    --color-cat-income: #4cbd78;
+    --color-cat-funding: #4fb6c3;
+    --color-cat-savings: #9cbc4a;
+    --color-cat-other: #a39f96;
+    --color-cat-administrative: #7d9de0;
+    --color-cat-luxury: #dd7db8;
+    --color-cat-living: #ec6b61;
+    --chart-grid: #26241f;
+    --chart-axis: #75716a;
+    --chart-line: #f1efea;
+    --chart-threshold: #3d3a35;
+    --progress-track: #2a2825;
+    --progress-marker: #1b1a18;
+    --progress-marker-border: #4a4740;
+    --logo-stone-middle: #6f6b63;
+    --shadow-float: 0 8px 28px rgb(0 0 0 / 50%), 0 1px 3px rgb(0 0 0 / 40%);
+  }
+}

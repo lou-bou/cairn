@@ -26,7 +26,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['server/**/*.ts', 'shared/**/*.ts', '*.js', '*.ts'],
+    files: ['server/**/*.ts', 'shared/**/*.ts', 'scripts/**/*.mjs', '*.js', '*.ts'],
     languageOptions: { globals: globals.node },
   },
   {
@@ -34,5 +34,23 @@ export default tseslint.config(
     languageOptions: { globals: globals.browser },
     plugins: { 'react-hooks': reactHooks },
     rules: reactHooks.configs.recommended.rules,
+  },
+  {
+    // Components read colors from theme tokens only (spec §14, AC 13).
+    files: ['web/src/**/*.{ts,tsx}'],
+    ignores: ['web/src/themes/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Literal[value=/^(#[0-9a-fA-F]{3,8}|rgba?\\(|hsla?\\()/]',
+          message: 'Use a theme token (var(--color-…)) instead of a raw color.',
+        },
+        {
+          selector: 'TemplateElement[value.raw=/#[0-9a-fA-F]{6}\\b|rgba?\\(/]',
+          message: 'Use a theme token (var(--color-…)) instead of a raw color.',
+        },
+      ],
+    },
   },
 );

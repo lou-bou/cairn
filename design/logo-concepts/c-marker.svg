@@ -1,0 +1,19 @@
+<!-- Concept C, "Trail marker": the stack set in an accent badge, no face; most app-icon-like. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Cairn">
+  <style>
+    .base { fill: var(--logo-stone-base, #1c1b19); }
+    .mid { fill: var(--logo-stone-middle, #a39e94); }
+    .top { fill: var(--logo-stone-top, #f2a922); }
+    .face { fill: var(--logo-face, #2a1d04); }
+    .smile { fill: none; stroke: var(--logo-face, #2a1d04); stroke-width: 1.4; stroke-linecap: round; }
+    @media (prefers-color-scheme: dark) {
+      .base { fill: var(--logo-stone-base, #f1efea); }
+      .mid { fill: var(--logo-stone-middle, #6f6b63); }
+      .top { fill: var(--logo-stone-top, #f5b13a); }
+    }
+  </style>
+  <rect class="top" x="2" y="2" width="60" height="60" rx="16"/>
+  <ellipse class="face" cx="32" cy="46" rx="18" ry="7"/>
+  <ellipse class="face" cx="31" cy="32.5" rx="12.5" ry="5.5" transform="rotate(-5 31 32.5)"/>
+  <ellipse class="face" cx="33" cy="21" rx="8" ry="5.5" transform="rotate(6 33 21)"/>
+</svg>
