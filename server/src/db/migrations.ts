@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import type { Database } from 'better-sqlite3';
 import { CATEGORIES } from '@cairn/shared';
 
@@ -13,24 +12,38 @@ interface Migration {
   up: (db: Database, ctx: MigrationContext) => void;
 }
 
+// Fixed ids, so a backup imported into a fresh install matches the seed instead of duplicating it.
 const SEED_MILESTONES = [
   {
+    id: '5eed0000-0000-4000-8000-000000000001',
     name: 'Phase 1: Pre-admission',
     costEur: 136500,
     note: 'IELTS with retake, B2 exam, apostilles, translations, application fees, postage',
   },
   {
+    id: '5eed0000-0000-4000-8000-000000000002',
     name: 'Phase 2: Admission to departure',
     costEur: 243500,
     note: 'Blocked account fee, visa, insurance, flight, housing deposit and first rent',
   },
   {
+    id: '5eed0000-0000-4000-8000-000000000003',
     name: 'Phase 3: Arrival',
     costEur: 110000,
     note: 'Residence permit, semester fee, setup costs',
   },
-  { name: 'Blocked account', costEur: 1190400, note: 'The blocked amount' },
-  { name: 'Car', costEur: 700000, note: 'Car purchase' },
+  {
+    id: '5eed0000-0000-4000-8000-000000000004',
+    name: 'Blocked account',
+    costEur: 1190400,
+    note: 'The blocked amount',
+  },
+  {
+    id: '5eed0000-0000-4000-8000-000000000005',
+    name: 'Car',
+    costEur: 700000,
+    note: 'Car purchase',
+  },
 ];
 
 export const MIGRATIONS: Migration[] = [
@@ -141,7 +154,7 @@ export const MIGRATIONS: Migration[] = [
          VALUES (?, ?, ?, ?, ?, 'EUR', ?, ?)`,
       );
       SEED_MILESTONES.forEach((m, i) =>
-        insert.run(randomUUID(), m.name, m.note, i + 1, m.costEur, defaultRateMilli, m.costEur),
+        insert.run(m.id, m.name, m.note, i + 1, m.costEur, defaultRateMilli, m.costEur),
       );
 
       const setting = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)');

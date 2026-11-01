@@ -6,6 +6,7 @@ import type { Config } from './config.js';
 import { openDb, type Db } from './db/index.js';
 import { errorHandler } from './errors.js';
 import { categoryRoutes } from './routes/categories.js';
+import { dataRoutes } from './routes/data.js';
 import { goalRoutes } from './routes/goal.js';
 import { healthRoutes } from './routes/health.js';
 import { reconciliationRoutes } from './routes/reconciliations.js';
@@ -40,6 +41,7 @@ export async function buildApp(
     summaryRoutes,
     settingsRoutes,
     reconciliationRoutes,
+    dataRoutes,
   ]) {
     await app.register(routes, { prefix: '/api' });
   }
