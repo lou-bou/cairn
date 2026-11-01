@@ -50,6 +50,7 @@ const TOKENS = [
   '--color-surface',
   '--color-text-muted',
   '--font-numeric',
+  '--radius-xs',
 ] as const;
 
 function rangeDates(range: Range, today: string): { from?: string; to?: string } {
@@ -224,7 +225,7 @@ function BalanceChart({
               tick={{ fill: t['--color-text-muted'] }}
               tickLine={false}
               axisLine={false}
-              width={56}
+              width={cur === 'DZD' ? 72 : 56}
             />
             {labelled.map((l) => (
               <ReferenceLine
@@ -286,6 +287,9 @@ function MonthlyChart({ summary }: { summary: Summary }) {
   const t = useTokens(TOKENS);
   const { money, conv, cur } = useDisplay();
   const data = summary.monthly.map((m) => ({ ...m, inD: conv(m.inEur), outD: conv(m.outEur) }));
+  // Bar ends follow the theme's small radius (Recharts needs a number).
+  const r = Number.parseInt(t['--radius-xs'], 10) || 0;
+  const barRadius: [number, number, number, number] = [r, r, 0, 0];
   const multiYear = new Set(summary.monthly.map((m) => m.month.slice(0, 4))).size > 1;
 
   return (
@@ -318,7 +322,7 @@ function MonthlyChart({ summary }: { summary: Summary }) {
               tick={{ fill: t['--color-text-muted'] }}
               tickLine={false}
               axisLine={false}
-              width={56}
+              width={cur === 'DZD' ? 72 : 56}
             />
             <Tooltip
               cursor={{ fill: t['--chart-grid'] }}
@@ -341,7 +345,7 @@ function MonthlyChart({ summary }: { summary: Summary }) {
               dataKey="inD"
               name="Money in"
               fill={t['--chart-in']}
-              radius={[4, 4, 0, 0]}
+              radius={barRadius}
               maxBarSize={24}
               isAnimationActive={false}
             />
@@ -349,7 +353,7 @@ function MonthlyChart({ summary }: { summary: Summary }) {
               dataKey="outD"
               name="Money out"
               fill={t['--chart-out']}
-              radius={[4, 4, 0, 0]}
+              radius={barRadius}
               maxBarSize={24}
               isAnimationActive={false}
             />

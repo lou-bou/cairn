@@ -1,5 +1,5 @@
 /*
- * Deliberately loud test theme (dev builds only) to prove that every component reads tokens
+ * Deliberately loud test theme (not in the picker) to prove that every component reads tokens
  * (AC 13). Open the app with ?theme=test. It inherits nothing from the default theme.
  */
 
