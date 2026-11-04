@@ -125,25 +125,139 @@ a {
 
 /* Shown in index.html until React mounts */
 .splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
   display: grid;
   place-items: center;
-  min-height: 100dvh;
 }
 
-.splash img {
-  width: 4rem;
-  height: 4rem;
-  animation: splash-in var(--duration-slow) var(--ease-out) both;
+.splash-leaving {
+  pointer-events: none;
 }
 
-@keyframes splash-in {
-  from {
+.splash-bg {
+  position: absolute;
+  inset: 0;
+  background: var(--color-bg);
+}
+
+.splash-mark {
+  position: relative;
+  width: 6rem;
+  height: 6rem;
+  overflow: visible;
+  transform-origin: 0 0;
+}
+
+.splash-base {
+  fill: var(--logo-stone-base);
+}
+
+.splash-mid {
+  fill: var(--logo-stone-middle);
+}
+
+.splash-top {
+  fill: var(--logo-stone-top);
+}
+
+.splash-face {
+  fill: var(--logo-face);
+}
+
+.splash-smile {
+  fill: none;
+  stroke: var(--logo-face);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+/* The stones drop in one at a time and squash as they land. */
+.splash-stone {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: splash-drop 500ms both;
+}
+
+.splash-stone-mid {
+  animation-delay: 120ms;
+}
+
+.splash-stone-top {
+  animation-delay: 240ms;
+}
+
+/* Then the top stone blinks and keeps hopping until the app is ready. */
+.splash-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: splash-blink 220ms var(--ease-out) 620ms;
+}
+
+.splash-hop {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: splash-hop 640ms ease-in-out 760ms infinite;
+}
+
+.splash-leaving .splash-hop {
+  animation: none;
+}
+
+@keyframes splash-drop {
+  0% {
     opacity: 0;
-    transform: translateY(var(--space-1));
+    transform: translateY(-260%) scale(0.96, 1.06);
+    animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.5);
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  55% {
+    transform: translateY(0) scale(1.12, 0.82);
+    animation-timing-function: ease-out;
+  }
+
+  78% {
+    transform: translateY(-6%) scale(0.97, 1.05);
+    animation-timing-function: ease-in-out;
+  }
+
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes splash-blink {
+  50% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes splash-hop {
+  18% {
+    transform: scale(1.08, 0.9);
+  }
+
+  50% {
+    transform: translateY(-30%) scale(0.97, 1.04);
+  }
+
+  80% {
+    transform: scale(1.06, 0.93);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .splash-stone,
+  .splash-eye,
+  .splash-hop {
+    animation: none;
+  }
+
   *,
   *::before,
   *::after {

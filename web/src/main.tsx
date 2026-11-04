@@ -13,6 +13,7 @@ import { ToastProvider } from './components/Toast';
 import { TransactionSheetProvider } from './components/TransactionSheet';
 import { PrefsProvider } from './lib/prefs';
 import { safeStorage } from './lib/storage';
+import { dismissSplash } from './lib/splash';
 import { initScheme, initTheme } from './lib/theme';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -57,4 +58,12 @@ createRoot(document.getElementById('root')!).render(
       </BrowserRouter>
     </PersistQueryClientProvider>
   </StrictMode>,
+);
+
+// Queries with cached data don't hold the splash; only a first load with nothing to show does.
+void dismissSplash(() =>
+  queryClient
+    .getQueryCache()
+    .getAll()
+    .some((q) => q.state.data === undefined && q.state.fetchStatus === 'fetching'),
 );

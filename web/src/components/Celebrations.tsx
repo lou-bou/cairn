@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import { useGoal, useMarkCelebrationsSeen, useMilestones } from '../api/hooks';
 import { bounceLogo } from '../lib/celebrate';
 import { shortName } from '../lib/milestones';
+import { useSplashGone } from '../lib/splash';
 import { useOnline } from '../lib/online';
 import { readToken } from '../lib/tokens';
 import { useToast } from './Toast';
@@ -52,11 +53,12 @@ export function Celebrations() {
   const { data: goal } = useGoal();
   const markSeen = useMarkCelebrationsSeen();
   const online = useOnline();
+  const splashGone = useSplashGone();
   const toast = useToast();
   const handled = useRef(new Set<string>());
 
   useEffect(() => {
-    if (!online || !milestones || !goal) return;
+    if (!online || !splashGone || !milestones || !goal) return;
     const fresh = milestones.filter(
       (m) =>
         m.achievedAt && !m.celebrationSeen && !handled.current.has(`m:${m.id}:${m.achievedAt}`),
@@ -83,7 +85,7 @@ export function Celebrations() {
     }
     markSeen.mutate({ milestoneIds: fresh.map((m) => m.id), goal: Boolean(goalFresh) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [milestones, goal, online]);
+  }, [milestones, goal, online, splashGone]);
 
   return null;
 }
