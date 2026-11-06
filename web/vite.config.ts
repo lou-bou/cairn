@@ -32,8 +32,24 @@ export default defineConfig({
       workbox: {
         // App shell is precached; API calls always go to the network (offline data comes from the query cache).
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-        navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//],
+        // Page loads try the network first, so Cloudflare Access can redirect to its login when the
+        // session has expired. A cached page would hide the login, and the app could never recover.
+        navigateFallback: null,
+        directoryIndex: null,
+        runtimeCaching: [
+          {
+            urlPattern: ({ request, url }) =>
+              request.mode === 'navigate' && !url.pathname.startsWith('/api/'),
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'cairn-pages',
+              networkTimeoutSeconds: 4,
+              // Not status 0: the login redirect is an opaque response and must never be cached.
+              cacheableResponse: { statuses: [200] },
+              precacheFallback: { fallbackURL: '/index.html' },
+            },
+          },
+        ],
       },
     }),
   ],

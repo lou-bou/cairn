@@ -5,11 +5,13 @@ import {
   ChartColumn,
   Flag,
   House,
+  LogIn,
   Minus,
   Plus,
   Settings,
   WifiOff,
 } from 'lucide-react';
+import { ApiError } from '../api/client';
 import { useGoal } from '../api/hooks';
 import { useOnline } from '../lib/online';
 import { usePrefs } from '../lib/prefs';
@@ -45,8 +47,21 @@ export function CurrencyToggle() {
 
 function ConnectionPill() {
   const online = useOnline();
-  const { isError } = useGoal();
+  const { isError, error } = useGoal();
   if (online && !isError) return null;
+  if (online && error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+    return (
+      <button
+        type="button"
+        className={`${styles.pill} ${styles.pillButton}`}
+        title="Your session expired"
+        onClick={() => window.location.reload()}
+      >
+        <LogIn />
+        Sign in again
+      </button>
+    );
+  }
   return (
     <span
       className={styles.pill}

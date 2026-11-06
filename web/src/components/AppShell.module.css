@@ -42,6 +42,10 @@
   white-space: nowrap;
 }
 
+.pillButton {
+  border: none;
+}
+
 .pill :global(.lucide) {
   width: var(--icon-size-sm);
   height: var(--icon-size-sm);

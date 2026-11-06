@@ -10,6 +10,8 @@ export class ApiError extends Error {
   }
 }
 
+const SESSION_EXPIRED = 'Your session expired. Reload the page to sign in again.';
+
 async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
   let res: Response;
   try {
@@ -17,10 +19,14 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
       method,
       headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body),
+      // The API never redirects, but Cloudflare Access does when the session has expired. Following
+      // it to the login domain fails like a network error, so catch it here instead.
+      redirect: 'manual',
     });
   } catch {
     throw new ApiError(0, "Can't reach the server. Check your connection.");
   }
+  if (res.type === 'opaqueredirect') throw new ApiError(401, SESSION_EXPIRED);
   const text = await res.text();
   let data: unknown = null;
   try {
@@ -31,7 +37,7 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
   if (!res.ok) {
     const err = (data ?? {}) as Partial<ApiErrorBody>;
     if (res.status === 401 || res.status === 403) {
-      throw new ApiError(res.status, 'Your session expired. Reload the page to sign in again.');
+      throw new ApiError(res.status, SESSION_EXPIRED);
     }
     throw new ApiError(res.status, err.error ?? `Request failed (${res.status})`, err.fields);
   }
