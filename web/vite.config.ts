@@ -34,12 +34,13 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
         // Page loads try the network first, so Cloudflare Access can redirect to its login when the
         // session has expired. A cached page would hide the login, and the app could never recover.
+        // /cdn-cgi/ is Access's own login callback, which sets the cookie: it must never be answered here.
         navigateFallback: null,
         directoryIndex: null,
         runtimeCaching: [
           {
             urlPattern: ({ request, url }) =>
-              request.mode === 'navigate' && !url.pathname.startsWith('/api/'),
+              request.mode === 'navigate' && !/^\/(api|cdn-cgi)\//.test(url.pathname),
             handler: 'NetworkFirst',
             options: {
               cacheName: 'cairn-pages',
