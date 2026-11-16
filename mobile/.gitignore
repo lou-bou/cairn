@@ -1,0 +1,4 @@
+# Release signing key and its passwords: never commit.
+/keys/
+*.jks
+key.properties
