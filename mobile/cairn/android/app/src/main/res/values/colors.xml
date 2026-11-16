@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="cairn_bg">#F6F5F2</color>
+    <color name="cairn_stone_base">#1C1B19</color>
+    <color name="cairn_stone_middle">#A39E94</color>
+    <color name="cairn_accent">#F2A922</color>
+    <color name="cairn_face">#2A1D04</color>
+    <color name="ic_launcher_background">#F6F5F2</color>
+</resources>

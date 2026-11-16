@@ -136,7 +136,9 @@ class Outbox extends Notifier<List<OutboxOp>> {
         } on ApiException catch (e) {
           final current = state.where((o) => o.id == op.id).firstOrNull;
           if (current == null) continue; // discarded while in flight
-          if (e.isTransient) {
+          // A server error is retried a few times, then parked so it cannot block the queue.
+          final giveUp = e.kind == ApiFailure.http && current.attempts >= 2;
+          if (e.isTransient && !giveUp) {
             replace(current.copyWith(attempts: current.attempts + 1));
             _scheduleRetry();
             break;

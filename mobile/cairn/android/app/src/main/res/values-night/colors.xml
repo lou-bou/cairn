@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="cairn_bg">#121211</color>
+    <color name="cairn_stone_base">#F1EFEA</color>
+    <color name="cairn_stone_middle">#6F6B63</color>
+    <color name="cairn_accent">#F5B13A</color>
+    <color name="cairn_face">#2A1D04</color>
+</resources>
