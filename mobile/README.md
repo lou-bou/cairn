@@ -40,23 +40,29 @@ mobile/
    save**. "Copy setup" in Settings → Connection copies all three so the next app can
    "Paste setup".
 
-## Build and install
+## Install and update
 
-Needs Flutter (stable), JDK 17 and the Android SDK.
+Releases are built by GitHub (`.github/workflows/mobile-release.yml`). To publish one:
+
+```sh
+git tag mobile-v1.0.1 && git push origin mobile-v1.0.1
+```
+
+A few minutes later the signed APK is on the repo's Releases page. Open that page on the phone,
+tap `cairn-1.0.1.apk`, and allow the browser to install apps the first time. Updates install
+over the existing app and keep the saved connection.
+
+The workflow needs two repository secrets (Settings → Secrets and variables → Actions):
+`MOBILE_KEYSTORE_BASE64` (`base64 -w0 mobile/keys/release.jks`) and `MOBILE_KEYSTORE_PASSWORD`
+(the `storePassword` value in `mobile/keys/key.properties`).
+
+To build on this machine instead (needs Flutter, JDK 17 and the Android SDK):
 
 ```sh
 cd mobile/cairn
 flutter build apk --release --target-platform android-arm64
-# -> build/app/outputs/flutter-apk/app-release.apk
-```
-
-Install over USB (Developer options → USB debugging on the phone):
-
-```sh
 adb install -r build/app/outputs/flutter-apk/app-release.apk
 ```
-
-Or copy the APK to the phone, open it in the Files app and allow installing from that source.
 
 **Signing key.** `mobile/keys/release.jks` and `key.properties` are not in git. Updates only
 install over an existing copy when signed with the same key, so back both files up. Without
