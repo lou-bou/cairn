@@ -22,7 +22,8 @@ class OutboxOp {
   final Map<String, dynamic> payload;
   final DateTime createdAt;
 
-  /// How many times it has been sent. More than zero means the server may already have it.
+  /// How many sends may have reached the server. More than zero means the server may already
+  /// have it, so a retry has to check before sending again.
   final int attempts;
 
   /// Set when the server refused it for good; it then waits for the user to retry or discard.
@@ -77,7 +78,7 @@ class Outbox extends Notifier<List<OutboxOp>> {
 
   OutboxExecutor? _executor;
   void Function()? _onSent;
-  bool _running = false;
+  Future<void>? _flushing;
   int _retryStep = 0;
   Timer? _timer;
 
@@ -117,43 +118,49 @@ class Outbox extends Notifier<List<OutboxOp>> {
     unawaited(flush());
   }
 
-  /// Send everything that can be sent. Safe to call often; concurrent calls share one run.
-  Future<void> flush() async {
+  /// Send everything that can be sent. Safe to call often; concurrent calls share one run, and
+  /// a change queued while it runs is picked up by that same run.
+  Future<void> flush() => _flushing ??= _run().whenComplete(() => _flushing = null);
+
+  Future<void> _run() async {
     final executor = _executor;
-    if (_running || executor == null) return;
-    _running = true;
+    if (executor == null) return;
     _timer?.cancel();
     var sentAny = false;
     try {
       while (true) {
         final op = state.where((o) => !o.failed).firstOrNull;
         if (op == null) break;
+        // Counted before sending, and saved, so that a crash or a lost answer mid-request still
+        // leaves a trace. The executor sees the count from before this attempt.
+        replace(op.copyWith(attempts: op.attempts + 1));
         try {
           await executor(op);
+          if (!ref.mounted) return;
           remove(op.id);
           sentAny = true;
           _retryStep = 0;
         } on ApiException catch (e) {
+          if (!ref.mounted) return;
           final current = state.where((o) => o.id == op.id).firstOrNull;
           if (current == null) continue; // discarded while in flight
           // A server error is retried a few times, then parked so it cannot block the queue.
-          final giveUp = e.kind == ApiFailure.http && current.attempts >= 2;
+          final giveUp = e.kind == ApiFailure.http && current.attempts >= 3;
           if (e.isTransient && !giveUp) {
-            replace(current.copyWith(attempts: current.attempts + 1));
+            // It provably never arrived: this attempt does not count.
+            if (!e.maybeDelivered) replace(current.copyWith(attempts: op.attempts));
             _scheduleRetry();
             break;
           }
-          replace(current.copyWith(attempts: current.attempts + 1, error: e.message));
+          replace(current.copyWith(error: e.message));
         } catch (_) {
+          if (!ref.mounted) return;
           final current = state.where((o) => o.id == op.id).firstOrNull;
-          if (current != null) {
-            replace(current.copyWith(attempts: current.attempts + 1, error: 'Could not be sent.'));
-          }
+          if (current != null) replace(current.copyWith(error: 'Could not be sent.'));
         }
       }
     } finally {
-      _running = false;
-      if (sentAny) _onSent?.call();
+      if (sentAny && ref.mounted) _onSent?.call();
     }
   }
 

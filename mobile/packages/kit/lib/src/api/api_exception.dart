@@ -25,11 +25,17 @@ class ApiException implements Exception {
     this.message, {
     this.status = 0,
     this.fields = const {},
+    this.maybeDelivered = true,
   });
 
   final ApiFailure kind;
   final String message;
   final int status;
+
+  /// False only when the request provably never reached the app server (no connection could be
+  /// made, or Cloudflare Access turned it away). True when it may have been processed even
+  /// though no usable answer came back, e.g. a timeout while waiting for the response.
+  final bool maybeDelivered;
 
   /// Per-field validation messages from the API, keyed by field name.
   final Map<String, String> fields;

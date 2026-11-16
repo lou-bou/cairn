@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'api/api_client.dart';
@@ -39,11 +41,23 @@ final connectionProvider = NotifierProvider<ConnectionController, ServerConnecti
   ConnectionController.new,
 );
 
+/// The HTTP layer. Tests override this with a fake.
+final dioProvider = Provider<Dio>((_) => Dio());
+
 final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient(
+    dio: ref.watch(dioProvider),
     connection: () => ref.read(connectionProvider),
     onOutcome: (failure) => ref.read(netStatusProvider.notifier).report(failure),
   );
+});
+
+/// Fires whenever the phone regains a network, as a cue to sync. A hint only: whether the server
+/// is actually reachable is decided by real requests (see [netStatusProvider]).
+final networkRegainedProvider = Provider<Stream<void>>((ref) {
+  return Connectivity().onConnectivityChanged
+      .where((results) => results.any((r) => r != ConnectivityResult.none))
+      .map((_) {});
 });
 
 /// Everything that has to be loaded before the first frame.

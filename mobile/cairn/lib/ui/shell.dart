@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kit/kit.dart';
@@ -48,16 +47,14 @@ class _ShellState extends ConsumerState<Shell>
     duration: const Duration(milliseconds: 1600),
   );
   Timer? _poll;
-  StreamSubscription<List<ConnectivityResult>>? _connectivity;
+  StreamSubscription<void>? _connectivity;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _startPolling();
-    _connectivity = Connectivity().onConnectivityChanged.listen((results) {
-      if (results.any((r) => r != ConnectivityResult.none)) _refresh();
-    }, onError: (_) {});
+    _connectivity = ref.read(networkRegainedProvider).listen((_) => _refresh(), onError: (_) {});
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refresh();
       _celebrate();
@@ -176,16 +173,17 @@ class _ShellState extends ConsumerState<Shell>
                               children: [
                                 for (var i = 0; i < pages.length; i++)
                                   if (_visited.contains(i))
+                                    // Offstage keeps each tab's state and scroll position
+                                    // without painting or hit-testing it; the opacity gives
+                                    // the incoming tab a quick fade.
                                     Positioned.fill(
-                                      child: IgnorePointer(
-                                        ignoring: i != _tab,
-                                        child: ExcludeSemantics(
-                                          excluding: i != _tab,
-                                          child: AnimatedOpacity(
-                                            opacity: i == _tab ? 1 : 0,
-                                            duration: Motion.fast,
-                                            child: TickerMode(enabled: i == _tab, child: pages[i]),
-                                          ),
+                                      child: Offstage(
+                                        offstage: i != _tab,
+                                        child: AnimatedOpacity(
+                                          opacity: i == _tab ? 1 : 0,
+                                          duration: Motion.base,
+                                          curve: Motion.easeOut,
+                                          child: TickerMode(enabled: i == _tab, child: pages[i]),
                                         ),
                                       ),
                                     ),

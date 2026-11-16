@@ -5,7 +5,12 @@ final kitMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 abstract final class Toasts {
   static void show(String message, {Duration duration = const Duration(seconds: 3)}) {
-    final messenger = kitMessengerKey.currentState;
+    final ScaffoldMessengerState? messenger;
+    try {
+      messenger = kitMessengerKey.currentState;
+    } catch (_) {
+      return; // no UI running (background work, tests)
+    }
     if (messenger == null) return;
     messenger.showSnackBar(
       SnackBar(content: Text(message), duration: duration, dismissDirection: DismissDirection.down),

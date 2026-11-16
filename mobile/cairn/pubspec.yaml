@@ -42,7 +42,6 @@ dependencies:
   kit:
     path: ../packages/kit
   lucide_icons_flutter: ^4.0.3
-  connectivity_plus: ^7.3.2
   dio: ^5.11.1
 
 dev_dependencies:

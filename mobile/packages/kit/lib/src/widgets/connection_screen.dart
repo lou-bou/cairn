@@ -49,6 +49,17 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
   bool _busy = false;
   String? _urlError;
   String? _error;
+  final _errorKey = GlobalKey();
+
+  /// Bring the explanation into view; it sits below the fields and may be off screen.
+  void _revealError() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _errorKey.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(ctx, duration: Motion.base, alignment: 0.5);
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -110,7 +121,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
 
     setState(() => _busy = true);
     try {
-      final json = await ApiClient.probe(conn, widget.healthPath);
+      final json = await ApiClient.probe(conn, widget.healthPath, dio: ref.read(dioProvider));
       if (!widget.isHealthy(json)) {
         throw ApiException(
           ApiFailure.badResponse,
@@ -123,8 +134,10 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
       widget.onSaved?.call();
     } on ApiException catch (e) {
       setState(() => _error = _explain(e, conn));
+      _revealError();
     } catch (_) {
       setState(() => _error = 'Could not save the connection on this device.');
+      _revealError();
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -244,7 +257,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
               ],
             ),
             const SizedBox(height: Space.s5),
-            FormError(_error),
+            FormError(_error, key: _errorKey),
             if (_error != null) const SizedBox(height: Space.s4),
             KitButton(
               label: _busy ? 'Testing…' : 'Test and save',

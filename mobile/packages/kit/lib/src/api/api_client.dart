@@ -77,7 +77,11 @@ class ApiClient {
   }) async {
     final conn = _connection();
     if (conn == null || conn.baseUrl.isEmpty) {
-      throw const ApiException(ApiFailure.notConfigured, 'Set up the server connection first.');
+      throw const ApiException(
+        ApiFailure.notConfigured,
+        'Set up the server connection first.',
+        maybeDelivered: false,
+      );
     }
     final cleanQuery = <String, dynamic>{
       for (final e in (query ?? const <String, Object?>{}).entries)
@@ -110,11 +114,16 @@ class ApiClient {
       return const ApiException(
         ApiFailure.network,
         "Couldn't make a secure connection to the server.",
+        maybeDelivered: false,
       );
     }
-    return const ApiException(
+    return ApiException(
       ApiFailure.network,
       "Can't reach the server. Check your connection.",
+      // Failing to connect means nothing was sent. A timeout after connecting does not.
+      maybeDelivered:
+          e.type != DioExceptionType.connectionError &&
+          e.type != DioExceptionType.connectionTimeout,
     );
   }
 
@@ -130,7 +139,12 @@ class ApiClient {
     // Access answers an unauthenticated request with a redirect to its login page (browsers) or
     // a 401/403. The API itself never redirects and has no auth of its own.
     if (status >= 300 && status < 400 || status == 401 || status == 403) {
-      throw ApiException(ApiFailure.accessDenied, accessDeniedMessage, status: status);
+      throw ApiException(
+        ApiFailure.accessDenied,
+        accessDeniedMessage,
+        status: status,
+        maybeDelivered: false,
+      );
     }
     if (status == 502 || status == 503 || status == 504 || (status >= 520 && status <= 530)) {
       throw ApiException(

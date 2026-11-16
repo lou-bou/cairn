@@ -122,6 +122,7 @@ class CairnData extends Notifier<DataState> {
   }
 
   void _patch(Snapshot Function(Snapshot s) change) {
+    if (!ref.mounted) return;
     final s = state.snapshot;
     if (s != null) _setSnapshot(change(s));
   }
@@ -133,6 +134,7 @@ class CairnData extends Notifier<DataState> {
     if (ref.read(connectionProvider) == null) return;
     state = DataState(snapshot: state.snapshot, refreshing: true, error: state.error);
     await _outbox.flush();
+    if (!ref.mounted) return;
     // While a create may have reached the server without us hearing back, the snapshot must not
     // learn about it from a fetch: the duplicate check relies on "not in the snapshot yet".
     final unresolved = ref.read(outboxProvider).any((o) => !o.failed && o.attempts > 0);
@@ -151,6 +153,7 @@ class CairnData extends Notifier<DataState> {
         api.categories(),
         api.backupStatus().then<BackupStatus?>((b) => b).catchError((_) => null),
       ]);
+      if (!ref.mounted) return;
       // A change queued while the fetch was in flight is applied on top by the view, so the
       // fresh snapshot can go straight in.
       final snapshot = Snapshot(
@@ -166,8 +169,9 @@ class CairnData extends Notifier<DataState> {
       state = DataState(snapshot: snapshot);
       ref.read(jsonStoreProvider).write(_cacheKey, snapshot.toJson());
     } on ApiException catch (e) {
-      state = DataState(snapshot: state.snapshot, error: e);
+      if (ref.mounted) state = DataState(snapshot: state.snapshot, error: e);
     } catch (_) {
+      if (!ref.mounted) return;
       state = DataState(
         snapshot: state.snapshot,
         error: const ApiException(
