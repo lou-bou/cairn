@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cairn/app.dart';
+import 'package:cairn/data/store.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -62,7 +63,11 @@ void main() {
   });
   tearDown(() => dir.deleteSync(recursive: true));
 
-  Future<ProviderContainer> launch(WidgetTester tester, {bool dark = false, bool connected = true}) async {
+  Future<ProviderContainer> launch(
+    WidgetTester tester, {
+    bool dark = false,
+    bool connected = true,
+  }) async {
     tester.view.physicalSize = const Size(1179, 2556);
     tester.view.devicePixelRatio = 3;
     tester.view.padding = const FakeViewPadding(top: 141, bottom: 72);
@@ -125,6 +130,52 @@ void main() {
     await tester.tap(find.text('Stats'));
     await shot(tester, '8-stats-dark');
     await close(tester, c);
+  });
+
+  // The splash, frozen at moments of interest (ms since it appeared), with a warm cache so it
+  // leaves on the first hop end, at 1400 ms, and lands at 1850 ms.
+  Future<void> splashShots(WidgetTester tester, {required bool dark, required List<int> at}) async {
+    final first = containerFor(server, dir);
+    await tester.runAsync(() async {
+      await first.read(dataProvider.notifier).refresh();
+      await first.read(jsonStoreProvider).write('noop', 1);
+    });
+    first.dispose();
+    tester.view.physicalSize = const Size(1179, 2556);
+    tester.view.devicePixelRatio = 3;
+    tester.view.padding = const FakeViewPadding(top: 141, bottom: 72);
+    tester.view.viewPadding = const FakeViewPadding(top: 141, bottom: 72);
+    addTearDown(tester.view.reset);
+    final c = containerFor(server, dir, splash: true);
+    if (dark) c.read(prefsProvider.notifier).set(themeModePref, 'dark');
+    await tester.pumpWidget(UncontrolledProviderScope(container: c, child: const CairnApp()));
+    var now = 0;
+    for (final ms in at) {
+      while (now < ms) {
+        final step = ms - now < 16 ? ms - now : 16;
+        await tester.pump(Duration(milliseconds: step));
+        now += step;
+      }
+      await expectLater(
+        find.byType(CairnApp),
+        matchesGoldenFile(
+          '../build/screens/splash-${dark ? 'dark-' : ''}${ms.toString().padLeft(4, '0')}.png',
+        ),
+      );
+    }
+    await close(tester, c);
+  }
+
+  testWidgets('splash', (tester) async {
+    await splashShots(
+      tester,
+      dark: false,
+      at: [16, 150, 330, 515, 730, 1080, 1250, 1500, 1650, 1900],
+    );
+  });
+
+  testWidgets('splash dark', (tester) async {
+    await splashShots(tester, dark: true, at: [515, 1080, 1550]);
   });
 
   testWidgets('first run', (tester) async {

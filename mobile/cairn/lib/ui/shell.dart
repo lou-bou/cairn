@@ -15,6 +15,7 @@ import 'pages/home.dart';
 import 'pages/settings.dart';
 import 'pages/stats.dart';
 import 'sheets/pending_sheet.dart';
+import 'state.dart';
 import 'theme.dart';
 import 'widgets/confetti.dart';
 import 'widgets/logo.dart';
@@ -27,6 +28,9 @@ const _tabs = [
   (label: 'Stats', icon: LucideIcons.chartColumn),
   (label: 'Settings', icon: LucideIcons.settings),
 ];
+
+/// The header's mark, where the splash lands. The header sits outside the tabs, so there is one.
+final logoKey = GlobalKey();
 
 /// The signed-in app: header, five tabs, background refresh and celebrations.
 class Shell extends ConsumerStatefulWidget {
@@ -48,6 +52,11 @@ class _ShellState extends ConsumerState<Shell>
   );
   Timer? _poll;
   StreamSubscription<void>? _connectivity;
+  late bool _splash = ref.read(splashProvider);
+
+  /// The first refresh of this launch has finished, with or without data. Like the web app,
+  /// the splash waits for that only when there is nothing cached to show.
+  bool _firstLoadDone = false;
 
   @override
   void initState() {
@@ -56,7 +65,9 @@ class _ShellState extends ConsumerState<Shell>
     _startPolling();
     _connectivity = ref.read(networkRegainedProvider).listen((_) => _refresh(), onError: (_) {});
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refresh();
+      ref.read(dataProvider.notifier).refresh().whenComplete(() {
+        if (mounted) setState(() => _firstLoadDone = true);
+      });
       _celebrate();
     });
   }
@@ -98,6 +109,8 @@ class _ShellState extends ConsumerState<Shell>
   /// Celebrate every achievement the server marks as not yet seen, then mark it seen, so each
   /// one celebrates once on whichever device opens first.
   void _celebrate() {
+    // Not behind the splash: it waits until the splash has gone (web: useSplashGone).
+    if (_splash) return;
     final snapshot = ref.read(snapshotProvider);
     if (snapshot == null || ref.read(netStatusProvider) != NetState.ok) return;
     final goal = snapshot.goal;
@@ -142,6 +155,7 @@ class _ShellState extends ConsumerState<Shell>
     final c = context.cairn;
     ref.listen(snapshotProvider, (_, _) => _celebrate());
     final hasData = ref.watch(hasDataProvider);
+    final splashReady = hasData || _firstLoadDone;
 
     final pages = <Widget>[
       HomePage(onSeeAll: () => _select(1)),
@@ -158,56 +172,74 @@ class _ShellState extends ConsumerState<Shell>
       },
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: overlayStyle(t, Theme.of(context).brightness),
-        child: Scaffold(
-          body: Stack(
-            children: [
-              SafeArea(
-                bottom: false,
-                child: Column(
-                  children: [
-                    _Header(hop: _hop),
-                    Expanded(
-                      child: !hasData
-                          ? const _FirstLoad()
-                          : Stack(
-                              children: [
-                                for (var i = 0; i < pages.length; i++)
-                                  if (_visited.contains(i))
-                                    // Offstage keeps each tab's state and scroll position
-                                    // without painting or hit-testing it; the opacity gives
-                                    // the incoming tab a quick fade.
-                                    Positioned.fill(
-                                      child: Offstage(
-                                        offstage: i != _tab,
-                                        child: AnimatedOpacity(
-                                          opacity: i == _tab ? 1 : 0,
-                                          duration: Motion.base,
-                                          curve: Motion.easeOut,
-                                          child: TickerMode(enabled: i == _tab, child: pages[i]),
+        child: Stack(
+          children: [
+            Scaffold(
+              body: Stack(
+                children: [
+                  SafeArea(
+                    bottom: false,
+                    child: Column(
+                      children: [
+                        _Header(hop: _hop),
+                        Expanded(
+                          child: !hasData
+                              ? const _FirstLoad()
+                              : Stack(
+                                  children: [
+                                    for (var i = 0; i < pages.length; i++)
+                                      if (_visited.contains(i))
+                                        // Offstage keeps each tab's state and scroll position
+                                        // without painting or hit-testing it; the opacity gives
+                                        // the incoming tab a quick fade.
+                                        Positioned.fill(
+                                          child: Offstage(
+                                            offstage: i != _tab,
+                                            child: AnimatedOpacity(
+                                              opacity: i == _tab ? 1 : 0,
+                                              duration: Motion.base,
+                                              curve: Motion.easeOut,
+                                              child: TickerMode(
+                                                enabled: i == _tab,
+                                                child: pages[i],
+                                              ),
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    ),
-                              ],
-                            ),
+                                  ],
+                                ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  Positioned.fill(
+                    child: ConfettiLayer(
+                      key: _confetti,
+                      colors: [
+                        t.accent,
+                        t.positive,
+                        c.category('funding'),
+                        c.category('luxury'),
+                        c.stoneMiddle,
+                      ],
+                    ),
+                  ),
+                ],
               ),
+              bottomNavigationBar: _BottomNav(index: _tab, onSelect: _select),
+            ),
+            if (_splash)
               Positioned.fill(
-                child: ConfettiLayer(
-                  key: _confetti,
-                  colors: [
-                    t.accent,
-                    t.positive,
-                    c.category('funding'),
-                    c.category('luxury'),
-                    c.stoneMiddle,
-                  ],
+                child: Splash(
+                  target: logoKey,
+                  ready: splashReady,
+                  onDone: () {
+                    setState(() => _splash = false);
+                    _celebrate();
+                  },
                 ),
               ),
-            ],
-          ),
-          bottomNavigationBar: _BottomNav(index: _tab, onSelect: _select),
+          ],
         ),
       ),
     );
@@ -233,11 +265,13 @@ class _Header extends ConsumerWidget {
                 // Two quick hops that die out.
                 final v = hop.value;
                 final lift = v == 0 ? 0.0 : (1 - v) * (0.5 - (((v * 3) % 1) - 0.5).abs()) * 2;
-                return Logo(size: 28, hop: lift);
+                return Logo(size: 28, hop: lift, markKey: logoKey);
               },
             ),
             const SizedBox(width: Space.s2),
-            const Expanded(child: Align(alignment: Alignment.centerRight, child: _StatusPill())),
+            const Expanded(
+              child: Align(alignment: Alignment.centerRight, child: _StatusPill()),
+            ),
             const SizedBox(width: Space.s2),
             CurrencyToggle(
               value: display,
@@ -322,7 +356,9 @@ class _FirstLoad extends ConsumerWidget {
     final data = ref.watch(dataProvider);
     final error = data.error;
     if (error == null || data.refreshing) {
-      return const Center(child: SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 3)));
+      return const Center(
+        child: SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 3)),
+      );
     }
     return Center(
       child: Padding(
@@ -331,7 +367,9 @@ class _FirstLoad extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             EmptyState(
-              icon: error.kind == ApiFailure.accessDenied ? LucideIcons.keyRound : LucideIcons.wifiOff,
+              icon: error.kind == ApiFailure.accessDenied
+                  ? LucideIcons.keyRound
+                  : LucideIcons.wifiOff,
               title: error.kind == ApiFailure.accessDenied
                   ? 'Access refused the token'
                   : "Couldn't load your data",
@@ -417,4 +455,3 @@ class _BottomNav extends StatelessWidget {
     );
   }
 }
-

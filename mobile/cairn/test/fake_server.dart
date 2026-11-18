@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cairn/domain/money.dart';
+import 'package:cairn/ui/state.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kit/kit.dart';
@@ -36,6 +38,9 @@ class FakeCairn {
   /// Cloudflare Access redirects to its login page.
   bool accessDenied = false;
 
+  /// While set, every request waits for it (a slow first load).
+  Completer<void>? hold;
+
   /// The next write is stored, but the phone never hears back.
   bool loseNextResponse = false;
   int _nextId = 1;
@@ -43,10 +48,8 @@ class FakeCairn {
   /// Writes that actually arrived (requests made while offline never did).
   final List<String> writes = [];
 
-  int get balance => transactions.fold(
-    0,
-    (s, t) => s + (t['type'] == 'in' ? 1 : -1) * (t['amountEur'] as int),
-  );
+  int get balance =>
+      transactions.fold(0, (s, t) => s + (t['type'] == 'in' ? 1 : -1) * (t['amountEur'] as int));
 
   Map<String, dynamic> seed(String date, String type, int cents, {String note = ''}) {
     final t = _store({
@@ -95,7 +98,8 @@ class FakeCairn {
     'celebrationSeen': true,
   };
 
-  FakeResponse _handle(RequestOptions r, Object? body) {
+  Future<FakeResponse> _handle(RequestOptions r, Object? body) async {
+    if (hold != null) await hold!.future;
     if (offline) throw const FakeOffline();
     if (accessDenied) {
       return const FakeResponse(302, '', {'location': 'https://team.cloudflareaccess.com/login'});
@@ -177,9 +181,15 @@ class FakeCairn {
 }
 
 /// A provider container wired to [server], with storage in [dir].
-ProviderContainer containerFor(FakeCairn server, Directory dir, {bool connected = true}) {
+ProviderContainer containerFor(
+  FakeCairn server,
+  Directory dir, {
+  bool connected = true,
+  bool splash = false,
+}) {
   return ProviderContainer(
     overrides: [
+      splashProvider.overrideWithValue(splash),
       ...KitBoot.memory(dir, connection: connected ? testConnection : null).overrides,
       dioProvider.overrideWithValue(fakeDio(server.adapter)),
       networkRegainedProvider.overrideWithValue(const Stream.empty()),
