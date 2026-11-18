@@ -11,11 +11,13 @@ import { useToast } from './Toast';
 import styles from './ImportSheet.module.css';
 
 const ENTITY_SINGULAR = {
+  goals: 'Goal',
   transactions: 'Entry',
   milestones: 'Milestone',
   reconciliations: 'Count',
 } as const;
 const ENTITY_LABEL = {
+  goals: 'Goals',
   transactions: 'Entries',
   milestones: 'Milestones',
   reconciliations: 'Counts',
@@ -168,7 +170,7 @@ export function ImportSheet({
         {(preview.goalDiffers || preview.settingsDiffer) && (
           <section className={styles.section}>
             {preview.goalDiffers && (
-              <Field label="Goal (name and amount)">
+              <Field label="Goal you are working toward">
                 <Segmented
                   label="Goal"
                   value={goal}

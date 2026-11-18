@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { NavLink } from 'react-router';
+import { NavLink, useLocation } from 'react-router';
 import {
   ArrowLeftRight,
   ChartColumn,
@@ -20,6 +20,11 @@ import { Logo } from './Logo';
 import { Segmented } from './Form';
 import { useTransactionSheet } from './TransactionSheet';
 import styles from './AppShell.module.css';
+
+/** The Goal tab also covers the goals list and each goal's own page. */
+function useOnGoals(): boolean {
+  return useLocation().pathname.startsWith('/goals');
+}
 
 const NAV = [
   { to: '/', label: 'Home', icon: House, end: true },
@@ -78,6 +83,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const sheet = useTransactionSheet();
   const online = useOnline();
   const bounce = useLogoBounce();
+  const onGoals = useOnGoals();
 
   return (
     <div className={styles.shell}>
@@ -91,7 +97,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               key={to}
               to={to}
               end={end}
-              className={({ isActive }) => `${styles.sideLink} ${isActive ? styles.active : ''}`}
+              className={({ isActive }) =>
+                `${styles.sideLink} ${isActive || (to === '/goal' && onGoals) ? styles.active : ''}`
+              }
             >
               <Icon />
               {label}
@@ -135,7 +143,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             key={to}
             to={to}
             end={end}
-            className={({ isActive }) => `${styles.bottomLink} ${isActive ? styles.active : ''}`}
+            className={({ isActive }) =>
+              `${styles.bottomLink} ${isActive || (to === '/goal' && onGoals) ? styles.active : ''}`
+            }
           >
             <span className={styles.bottomIcon}>
               <Icon />

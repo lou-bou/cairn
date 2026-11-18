@@ -3,6 +3,7 @@ import { AppShell } from './components/AppShell';
 import { Celebrations } from './components/Celebrations';
 import { DashboardPage } from './pages/Dashboard';
 import { GoalPage } from './pages/Goal';
+import { GoalsPage } from './pages/Goals';
 import { SettingsPage } from './pages/Settings';
 import { StatsPage } from './pages/Stats';
 import { TransactionsPage } from './pages/Transactions';
@@ -14,6 +15,8 @@ export function App() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/transactions" element={<TransactionsPage />} />
         <Route path="/goal" element={<GoalPage />} />
+        <Route path="/goals" element={<GoalsPage />} />
+        <Route path="/goals/:id" element={<GoalPage />} />
         <Route path="/stats" element={<StatsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<DashboardPage />} />

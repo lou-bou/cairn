@@ -173,3 +173,44 @@
   justify-content: space-between;
   gap: var(--space-3);
 }
+
+/* Goal switcher in the page header */
+.switcher {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.switcher select {
+  max-width: 12rem;
+}
+
+.allGoals {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+.allGoals svg {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+}
+
+/* A goal that isn't the one being worked toward */
+.notActive {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.notActiveActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

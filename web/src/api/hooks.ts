@@ -3,6 +3,7 @@ import type {
   BackupStatus,
   Category,
   Goal,
+  GoalDetail,
   GoalInput,
   Milestone,
   MilestoneInput,
@@ -24,6 +25,7 @@ export const keys = {
   categories: ['cairn', 'categories'] as const,
   transactions: (f: TransactionFilters = {}) => ['cairn', 'transactions', f] as const,
   goal: ['cairn', 'goal'] as const,
+  goals: ['cairn', 'goals'] as const,
   milestones: ['cairn', 'milestones'] as const,
   summary: (from?: string, to?: string) => ['cairn', 'summary', from ?? null, to ?? null] as const,
   settings: ['cairn', 'settings'] as const,
@@ -61,6 +63,13 @@ export const useTransactions = (f: TransactionFilters = {}) =>
 
 export const useGoal = () =>
   useQuery({ queryKey: keys.goal, queryFn: () => unwrap(api.get<Data<Goal>>('/api/goal')) });
+
+/** Every goal with its milestones (the goals page and the switcher). */
+export const useGoals = () =>
+  useQuery({
+    queryKey: keys.goals,
+    queryFn: () => unwrap(api.get<Data<GoalDetail[]>>('/api/goals')),
+  });
 
 export const useMilestones = () =>
   useQuery({
@@ -118,10 +127,26 @@ export const useUpdateTransaction = () =>
 export const useDeleteTransaction = () =>
   useWrite((id: string) => api.del<Mutation<{ id: string }>>(`/api/transactions/${id}`));
 
+/** One goal by id. */
 export const useUpdateGoal = () =>
-  useWrite((v: GoalInput) => api.put<Mutation<Goal>>('/api/goal', v));
+  useWrite(({ id, ...v }: GoalInput & { id: string }) =>
+    api.put<Mutation<Goal>>(`/api/goals/${id}`, v),
+  );
+export const useCreateGoal = () =>
+  useWrite((v: GoalInput) => api.post<Mutation<Goal>>('/api/goals', v));
+export const useDeleteGoal = () =>
+  useWrite((id: string) => api.del<Mutation<{ id: string }>>(`/api/goals/${id}`));
+/** Work toward this goal now. */
+export const useActivateGoal = () =>
+  useWrite((id: string) => api.post<Mutation<Goal>>(`/api/goals/${id}/activate`));
+export const useArchiveGoal = () =>
+  useWrite(({ id, archived }: { id: string; archived: boolean }) =>
+    api.post<Mutation<Goal>>(`/api/goals/${id}/archive`, { archived }),
+  );
 export const useCreateMilestone = () =>
-  useWrite((v: MilestoneInput) => api.post<Mutation<Milestone>>('/api/milestones', v));
+  useWrite(({ goalId, ...v }: MilestoneInput & { goalId: string }) =>
+    api.post<Mutation<Milestone>>(`/api/goals/${goalId}/milestones`, v),
+  );
 export const useUpdateMilestone = () =>
   useWrite(({ id, ...v }: MilestoneInput & { id: string }) =>
     api.put<Mutation<Milestone>>(`/api/milestones/${id}`, v),

@@ -141,9 +141,12 @@ export function MoneyInputFields({
 
 export function MilestoneSheet({
   milestone,
+  goalId,
   onClose,
 }: {
   milestone: Milestone | null;
+  /** The goal a new milestone is added to. */
+  goalId: string;
   onClose: () => void;
 }) {
   const create = useCreateMilestone();
@@ -177,7 +180,7 @@ export function MilestoneSheet({
     };
     try {
       if (milestone) await update.mutateAsync({ id: milestone.id, ...body });
-      else await create.mutateAsync(body);
+      else await create.mutateAsync({ goalId, ...body });
       toast.show(milestone ? 'Milestone saved' : 'Milestone added');
       onClose();
     } catch (err) {

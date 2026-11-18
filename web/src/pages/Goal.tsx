@@ -17,33 +17,69 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ChevronDown, ChevronUp, GripVertical, Mountain, Plus } from 'lucide-react';
-import { formatMoney, type Goal, type GoalMode, type Milestone } from '@cairn/shared';
+import { ChevronDown, ChevronUp, GripVertical, ListChecks, Mountain, Plus } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router';
+import {
+  formatMoney,
+  type Goal,
+  type GoalDetail,
+  type GoalInput,
+  type GoalMode,
+  type Milestone,
+} from '@cairn/shared';
 import { ApiError } from '../api/client';
-import { useGoal, useMilestones, useReorderMilestones, useUpdateGoal } from '../api/hooks';
+import {
+  useActivateGoal,
+  useArchiveGoal,
+  useDeleteGoal,
+  useGoals,
+  useReorderMilestones,
+  useUpdateGoal,
+} from '../api/hooks';
 import { PageHeader } from '../components/AppShell';
 import { Button, IconButton } from '../components/Button';
 import { Card, CardHeader, EmptyState } from '../components/Card';
-import { Field, FormError, Segmented, TextInput } from '../components/Form';
+import { Field, FormError, Segmented, Select, TextInput } from '../components/Form';
 import { MilestoneSheet, MoneyInputFields, useMoneyInput } from '../components/MilestoneSheet';
 import { useToast } from '../components/Toast';
 import { useMoney } from '../lib/money';
 import { useOnline } from '../lib/online';
 import styles from './Goal.module.css';
 
+/** /goal shows the active goal; /goals/:id shows any goal, active or not. */
 export function GoalPage() {
-  const { data: goal } = useGoal();
-  const { data: milestones } = useMilestones();
+  const { id } = useParams();
+  const { data: goals } = useGoals();
   const [editing, setEditing] = useState<Milestone | 'new' | null>(null);
   const online = useOnline();
+  const goal = goals?.find((g) => (id ? g.id === id : g.active));
+
+  if (goals && !goal) {
+    return (
+      <div className={styles.page}>
+        <PageHeader title="Goal" />
+        <Card>
+          <EmptyState icon={<Mountain />} title="This goal no longer exists">
+            <Link to="/goals">See all goals</Link>
+          </EmptyState>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
-      <PageHeader title="Goal" />
-      {goal && milestones && (
-        <GoalForm key={`${goal.mode}:${goal.customEur}:${goal.name}`} goal={goal} />
+      <PageHeader
+        title="Goal"
+        actions={goals && goal && <GoalSwitcher goals={goals} shown={goal} />}
+      />
+      {goal && !goal.active && goals && (
+        <NotActiveCard goal={goal} active={goals.find((g) => g.active)} />
       )}
-      {goal && milestones && (
+      {goal && (
+        <GoalForm key={`${goal.id}:${goal.mode}:${goal.customEur}:${goal.name}`} goal={goal} />
+      )}
+      {goal && (
         <Card>
           <CardHeader
             title="Milestones"
@@ -58,19 +94,20 @@ export function GoalPage() {
               </Button>
             }
           />
-          {milestones.length === 0 ? (
+          {goal.milestones.length === 0 ? (
             <EmptyState icon={<Mountain />} title="No milestones yet">
-              Break the goal into steps you can afford one at a time, like fees, a deposit or a
-              flight.
+              Break the goal into steps you can afford one at a time, like the price, insurance or a
+              deposit. The goal adds them up.
             </EmptyState>
           ) : (
-            <MilestoneList milestones={milestones} goal={goal} onEdit={setEditing} />
+            <MilestoneList milestones={goal.milestones} goal={goal} onEdit={setEditing} />
           )}
         </Card>
       )}
-      {editing && (
+      {editing && goal && (
         <MilestoneSheet
           milestone={editing === 'new' ? null : editing}
+          goalId={goal.id}
           onClose={() => setEditing(null)}
         />
       )}
@@ -78,7 +115,219 @@ export function GoalPage() {
   );
 }
 
-function GoalForm({ goal }: { goal: Goal }) {
+/** Pick the goal to work toward, and a way to every goal. */
+function GoalSwitcher({ goals, shown }: { goals: GoalDetail[]; shown: GoalDetail }) {
+  const activate = useActivateGoal();
+  const online = useOnline();
+  const toast = useToast();
+  const navigate = useNavigate();
+  const active = goals.find((g) => g.active);
+  const choices = goals.filter((g) => !g.archivedAt || g.active);
+
+  return (
+    <div className={styles.switcher}>
+      {choices.length > 1 && active && (
+        <Select
+          aria-label="Goal to work toward"
+          value={active.id}
+          disabled={!online || activate.isPending}
+          onChange={async (e) => {
+            const next = goals.find((g) => g.id === e.target.value);
+            if (!next) return;
+            await activate.mutateAsync(next.id);
+            toast.show(`Working toward ${next.name}`);
+            if (shown.id !== next.id) navigate('/goal');
+          }}
+        >
+          {choices.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.name}
+            </option>
+          ))}
+        </Select>
+      )}
+      <Link to="/goals" className={styles.allGoals}>
+        <ListChecks aria-hidden="true" />
+        All goals
+      </Link>
+    </div>
+  );
+}
+
+/** Shown when looking at a goal that isn't the one being worked toward. */
+function NotActiveCard({ goal, active }: { goal: GoalDetail; active?: Goal }) {
+  const activate = useActivateGoal();
+  const archive = useArchiveGoal();
+  const remove = useDeleteGoal();
+  const online = useOnline();
+  const toast = useToast();
+  const navigate = useNavigate();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const run = async (action: () => Promise<unknown>, done: string, then?: () => void) => {
+    setError(null);
+    try {
+      await action();
+      toast.show(done);
+      then?.();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Something went wrong. Try again.');
+    }
+  };
+
+  return (
+    <Card>
+      <div className={styles.notActive}>
+        <p>
+          {goal.archivedAt ? 'This goal is archived. ' : ''}
+          You are working toward <strong>{active?.name ?? 'another goal'}</strong>. Make this the
+          goal to see your progress on it at home and get its celebrations.
+        </p>
+        <div className={styles.notActiveActions}>
+          <Button
+            variant="primary"
+            busy={activate.isPending}
+            disabled={!online}
+            onClick={() =>
+              run(
+                () => activate.mutateAsync(goal.id),
+                `Working toward ${goal.name}`,
+                () => navigate('/goal'),
+              )
+            }
+          >
+            Work toward this goal
+          </Button>
+          <Button
+            variant="ghost"
+            disabled={!online || archive.isPending}
+            onClick={() =>
+              run(
+                () => archive.mutateAsync({ id: goal.id, archived: !goal.archivedAt }),
+                goal.archivedAt ? 'Goal restored' : 'Goal archived',
+              )
+            }
+          >
+            {goal.archivedAt ? 'Restore' : 'Archive'}
+          </Button>
+          {confirmDelete ? (
+            <Button
+              variant="danger"
+              busy={remove.isPending}
+              disabled={!online}
+              onClick={() =>
+                run(
+                  () => remove.mutateAsync(goal.id),
+                  'Goal deleted',
+                  () => navigate('/goals'),
+                )
+              }
+            >
+              Delete it and its milestones
+            </Button>
+          ) : (
+            <Button variant="ghost" onClick={() => setConfirmDelete(true)}>
+              Delete
+            </Button>
+          )}
+        </div>
+        <FormError message={error} />
+      </div>
+    </Card>
+  );
+}
+
+/** Name and amount: shared by editing a goal and creating one. */
+export function GoalFields({
+  name,
+  setName,
+  mode,
+  setMode,
+  amount,
+  errors,
+  milestoneSumEur,
+}: {
+  name: string;
+  setName: (v: string) => void;
+  mode: GoalMode;
+  setMode: (v: GoalMode) => void;
+  amount: ReturnType<typeof useMoneyInput>;
+  errors: Record<string, string>;
+  milestoneSumEur: number;
+}) {
+  return (
+    <>
+      <Field label="Name" htmlFor="goal-name" error={errors.name}>
+        <TextInput
+          id="goal-name"
+          value={name}
+          maxLength={80}
+          placeholder="e.g. Car"
+          onChange={(e) => setName(e.target.value)}
+          invalid={!!errors.name}
+        />
+      </Field>
+      <Field
+        label="Amount"
+        error={errors.mode}
+        hint={
+          mode === 'auto'
+            ? 'The goal is the total of its milestones and follows them as they change.'
+            : milestoneSumEur > 0
+              ? `Must be at least the milestone total of ${formatMoney(milestoneSumEur, 'EUR')}.`
+              : 'A fixed amount. Milestones can still mark the steps toward it.'
+        }
+      >
+        <Segmented
+          label="Goal amount mode"
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: 'auto', label: 'Sum of milestones' },
+            { value: 'custom', label: 'Custom amount' },
+          ]}
+        />
+      </Field>
+      {mode === 'custom' && (
+        <MoneyInputFields
+          state={amount}
+          id="goal"
+          label="Custom amount"
+          amountError={errors.customOriginal}
+          rateError={errors.rate}
+        />
+      )}
+    </>
+  );
+}
+
+/** Parse the goal fields into an API body, or field errors. */
+export function goalBody(
+  name: string,
+  mode: GoalMode,
+  amount: ReturnType<typeof useMoneyInput>,
+): { body?: GoalInput; errors: Record<string, string> } {
+  const errors: Record<string, string> = {};
+  if (!name.trim()) errors.name = 'Name is required';
+  if (mode === 'auto')
+    return Object.keys(errors).length ? { errors } : { body: { name, mode }, errors };
+  const parsed = amount.parse('customOriginal');
+  Object.assign(errors, parsed.errors);
+  if (!parsed.values || Object.keys(errors).length) return { errors };
+  return {
+    body: {
+      name,
+      mode,
+      customOriginal: parsed.values.amount,
+      currency: parsed.values.currency,
+      rate: parsed.values.rate,
+    },
+    errors,
+  };
+}
+
+function GoalForm({ goal }: { goal: GoalDetail }) {
   const update = useUpdateGoal();
   const online = useOnline();
   const toast = useToast();
@@ -92,32 +341,15 @@ function GoalForm({ goal }: { goal: Goal }) {
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const hasMilestones = goal.milestoneSumEur > 0;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const fieldErrors: Record<string, string> = {};
-    if (!name.trim()) fieldErrors.name = 'Name is required';
-    let body: Parameters<typeof update.mutateAsync>[0] = { name, mode };
-    if (mode === 'custom') {
-      const parsed = amount.parse('customOriginal');
-      Object.assign(fieldErrors, parsed.errors);
-      if (parsed.values) {
-        body = {
-          ...body,
-          customOriginal: parsed.values.amount,
-          currency: parsed.values.currency,
-          rate: parsed.values.rate,
-        };
-      }
-    } else if (!hasMilestones) {
-      fieldErrors.mode = 'Auto mode needs at least one milestone';
-    }
+    const { body, errors: fieldErrors } = goalBody(name, mode, amount);
     setErrors(fieldErrors);
     setFormError(null);
-    if (Object.keys(fieldErrors).length) return;
+    if (!body) return;
     try {
-      await update.mutateAsync(body);
+      await update.mutateAsync({ id: goal.id, ...body });
       toast.show('Goal saved');
     } catch (err) {
       if (err instanceof ApiError) {
@@ -131,46 +363,20 @@ function GoalForm({ goal }: { goal: Goal }) {
     <Card>
       <form className={styles.goalForm} onSubmit={submit} noValidate>
         <div className={styles.goalSummary}>
-          <span className="muted">Goal</span>
-          <span className={`${styles.goalAmount} num`}>{money.total(goal.amountEur)}</span>
+          <span className="muted">{goal.active ? 'Working toward' : 'Goal'}</span>
+          <span className={`${styles.goalAmount} num`}>
+            {goal.amountEur > 0 ? money.total(goal.amountEur) : 'No amount yet'}
+          </span>
         </div>
-        <Field label="Name" htmlFor="goal-name" error={errors.name}>
-          <TextInput
-            id="goal-name"
-            value={name}
-            maxLength={80}
-            onChange={(e) => setName(e.target.value)}
-            invalid={!!errors.name}
-          />
-        </Field>
-        <Field
-          label="Amount"
-          error={errors.mode}
-          hint={
-            mode === 'auto'
-              ? 'The goal is the total of all milestones and follows them as they change.'
-              : `Must be at least the milestone total of ${formatMoney(goal.milestoneSumEur, 'EUR')}.`
-          }
-        >
-          <Segmented
-            label="Goal amount mode"
-            value={mode}
-            onChange={setMode}
-            options={[
-              { value: 'auto', label: 'Sum of milestones' },
-              { value: 'custom', label: 'Custom amount' },
-            ]}
-          />
-        </Field>
-        {mode === 'custom' && (
-          <MoneyInputFields
-            state={amount}
-            id="goal"
-            label="Custom amount"
-            amountError={errors.customOriginal}
-            rateError={errors.rate}
-          />
-        )}
+        <GoalFields
+          name={name}
+          setName={setName}
+          mode={mode}
+          setMode={setMode}
+          amount={amount}
+          errors={errors}
+          milestoneSumEur={goal.milestoneSumEur}
+        />
         <FormError message={formError} />
         <div>
           <Button type="submit" variant="primary" busy={update.isPending} disabled={!online}>
