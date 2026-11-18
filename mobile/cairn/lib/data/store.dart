@@ -13,6 +13,7 @@ class Snapshot {
     required this.transactions,
     required this.goal,
     required this.milestones,
+    this.goals = const [],
     required this.settings,
     required this.reconciliations,
     required this.backup,
@@ -21,8 +22,13 @@ class Snapshot {
 
   final List<Category> categories;
   final List<Tx> transactions;
+
+  /// The active goal and its milestones.
   final Goal goal;
   final List<Milestone> milestones;
+
+  /// Every goal, each with its milestones (the active one included).
+  final List<Goal> goals;
   final Settings settings;
   final List<Reconciliation> reconciliations;
   final BackupStatus? backup;
@@ -39,6 +45,7 @@ class Snapshot {
     transactions: transactions ?? this.transactions,
     goal: goal ?? this.goal,
     milestones: milestones ?? this.milestones,
+    goals: goals,
     settings: settings ?? this.settings,
     reconciliations: reconciliations ?? this.reconciliations,
     backup: backup,
@@ -49,6 +56,7 @@ class Snapshot {
     'categories': [for (final c in categories) c.toJson()],
     'transactions': [for (final t in transactions) t.toJson()],
     'goal': goal.toJson(),
+    'goals': [for (final g in goals) g.toJson()],
     'milestones': [for (final m in milestones) m.toJson()],
     'settings': settings.toJson(),
     'reconciliations': [for (final r in reconciliations) r.toJson()],
@@ -64,6 +72,7 @@ class Snapshot {
         categories: [for (final c in raw['categories'] as List) Category.fromJson(m(c))],
         transactions: [for (final t in raw['transactions'] as List) Tx.fromJson(m(t))],
         goal: Goal.fromJson(m(raw['goal'])),
+        goals: [for (final g in (raw['goals'] as List? ?? const [])) Goal.fromJson(m(g))],
         milestones: [for (final x in raw['milestones'] as List) Milestone.fromJson(m(x))],
         settings: Settings.fromJson(m(raw['settings'])),
         reconciliations: [
@@ -152,6 +161,7 @@ class CairnData extends Notifier<DataState> {
         api.reconciliations(),
         api.categories(),
         api.backupStatus().then<BackupStatus?>((b) => b).catchError((_) => null),
+        api.goals(),
       ]);
       if (!ref.mounted) return;
       // A change queued while the fetch was in flight is applied on top by the view, so the
@@ -164,6 +174,10 @@ class CairnData extends Notifier<DataState> {
         reconciliations: results[4] as List<Reconciliation>,
         categories: results[5] as List<Category>,
         backup: results[6] as BackupStatus?,
+        // A server from before goals could be added has just the one.
+        goals:
+            results[7] as List<Goal>? ??
+            [(results[1] as Goal).withMilestones(results[2] as List<Milestone>)],
         fetchedAt: DateTime.now().toIso8601String(),
       );
       state = DataState(snapshot: snapshot);
@@ -322,10 +336,25 @@ class CairnData extends Notifier<DataState> {
     return notices;
   }
 
-  Future<Notices> saveGoal(Map<String, dynamic> body) => _online((a) => a.saveGoal(body));
+  Future<Notices> updateGoal(String id, Map<String, dynamic> body) =>
+      _online((a) => a.updateGoal(id, body));
 
-  Future<Notices> createMilestone(Map<String, dynamic> body) =>
-      _online((a) => a.createMilestone(body));
+  /// Creates a goal and returns its id.
+  Future<String> createGoal(Map<String, dynamic> body) async {
+    final res = await _api.createGoal(body);
+    await refresh();
+    return res.id;
+  }
+
+  Future<Notices> deleteGoal(String id) => _online((a) => a.deleteGoal(id));
+
+  Future<Notices> activateGoal(String id) => _online((a) => a.activateGoal(id));
+
+  Future<Notices> archiveGoal(String id, {required bool archived}) =>
+      _online((a) => a.archiveGoal(id, archived: archived));
+
+  Future<Notices> createMilestone(String goalId, Map<String, dynamic> body) =>
+      _online((a) => a.createMilestone(goalId, body));
 
   Future<Notices> updateMilestone(String id, Map<String, dynamic> body) =>
       _online((a) => a.updateMilestone(id, body));

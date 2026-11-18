@@ -6,8 +6,9 @@ typedef Saved<T> = ({T data, Notices notices});
 
 Map<String, dynamic> _map(Object? o) => Map<String, dynamic>.from(o as Map);
 
-Notices _notices(Object? res) =>
-    [for (final n in ((res as Map?)?['notices'] as List? ?? const [])) '$n'];
+Notices _notices(Object? res) => [
+  for (final n in ((res as Map?)?['notices'] as List? ?? const [])) '$n',
+];
 
 /// Typed calls to the Cairn API (server/src/routes).
 class CairnApi {
@@ -27,9 +28,10 @@ class CairnApi {
     const page = 1000;
     final out = <Tx>[];
     while (true) {
-      final res =
-          await _c.get('/api/transactions', query: {...query, 'limit': page, 'offset': out.length})
-              as Map;
+      final res = await _c.get(
+        '/api/transactions',
+        query: {...query, 'limit': page, 'offset': out.length},
+      ) as Map;
       final items = res['data'] as List;
       out.addAll(items.map((t) => Tx.fromJson(_map(t))));
       final total = (res['total'] as num?)?.toInt() ?? out.length;
@@ -38,6 +40,18 @@ class CairnApi {
   }
 
   Future<Goal> goal() async => Goal.fromJson(_map((await _c.get('/api/goal') as Map)['data']));
+
+  /// Every goal with its milestones, or null from a server that has only the one goal.
+  Future<List<Goal>?> goals() async {
+    try {
+      return [
+        for (final g in (await _c.get('/api/goals') as Map)['data'] as List) Goal.fromJson(_map(g)),
+      ];
+    } on ApiException catch (e) {
+      if (e.status == 404 || e.kind == ApiFailure.badResponse) return null;
+      rethrow;
+    }
+  }
 
   Future<List<Milestone>> milestones() async => [
     for (final m in (await _c.get('/api/milestones') as Map)['data'] as List)
@@ -67,11 +81,27 @@ class CairnApi {
 
   Future<Notices> deleteTx(String id) async => _notices(await _c.delete('/api/transactions/$id'));
 
-  Future<Notices> saveGoal(Map<String, dynamic> body) async =>
-      _notices(await _c.put('/api/goal', body: body));
+  /// One goal by id; with no id (a server from before goals could be added), the only goal.
+  Future<Notices> updateGoal(String id, Map<String, dynamic> body) async =>
+      _notices(await _c.put(id.isEmpty ? '/api/goal' : '/api/goals/$id', body: body));
 
-  Future<Notices> createMilestone(Map<String, dynamic> body) async =>
-      _notices(await _c.post('/api/milestones', body: body));
+  Future<Notices> deleteGoal(String id) async => _notices(await _c.delete('/api/goals/$id'));
+
+  Future<Notices> activateGoal(String id) async =>
+      _notices(await _c.post('/api/goals/$id/activate'));
+
+  Future<Notices> archiveGoal(String id, {required bool archived}) async =>
+      _notices(await _c.post('/api/goals/$id/archive', body: {'archived': archived}));
+
+  /// Returns the new goal's id, so it can be opened right away.
+  Future<({String id, Notices notices})> createGoal(Map<String, dynamic> body) async {
+    final res = await _c.post('/api/goals', body: body);
+    return (id: _map((res as Map)['data'])['id'] as String, notices: _notices(res));
+  }
+
+  Future<Notices> createMilestone(String goalId, Map<String, dynamic> body) async => _notices(
+    await _c.post(goalId.isEmpty ? '/api/milestones' : '/api/goals/$goalId/milestones', body: body),
+  );
 
   Future<Notices> updateMilestone(String id, Map<String, dynamic> body) async =>
       _notices(await _c.put('/api/milestones/$id', body: body));
@@ -101,7 +131,10 @@ class CairnApi {
     return ImportPreview.fromJson(_map((res as Map)['data']));
   }
 
-  Future<Saved<Map<String, dynamic>>> importRun(Object? file, Map<String, dynamic> resolution) async {
+  Future<Saved<Map<String, dynamic>>> importRun(
+    Object? file,
+    Map<String, dynamic> resolution,
+  ) async {
     final res = await _c.post('/api/import', body: {'file': file, 'resolution': resolution});
     return (data: _map((res as Map)['data']), notices: _notices(res));
   }

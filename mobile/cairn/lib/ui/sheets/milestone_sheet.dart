@@ -8,8 +8,14 @@ import '../../data/view.dart';
 import '../../domain/models.dart';
 import '../widgets/money_input.dart';
 
-Future<void> openMilestoneSheet(BuildContext context, {Milestone? milestone}) =>
-    showKitSheet<void>(context, builder: (_) => MilestoneSheet(milestone: milestone));
+Future<void> openMilestoneSheet(
+  BuildContext context, {
+  required String goalId,
+  Milestone? milestone,
+}) => showKitSheet<void>(
+  context,
+  builder: (_) => MilestoneSheet(goalId: goalId, milestone: milestone),
+);
 
 /// Shows server notices ("Goal raised to …") after a write.
 void showNotices(Notices notices) {
@@ -19,7 +25,10 @@ void showNotices(Notices notices) {
 }
 
 class MilestoneSheet extends ConsumerStatefulWidget {
-  const MilestoneSheet({super.key, this.milestone});
+  const MilestoneSheet({super.key, required this.goalId, this.milestone});
+
+  /// The goal a new milestone is added to.
+  final String goalId;
   final Milestone? milestone;
 
   @override
@@ -99,7 +108,8 @@ class _MilestoneSheetState extends ConsumerState<MilestoneSheet> {
     final data = ref.read(dataProvider.notifier);
     final m = widget.milestone;
     _run(
-      () => m == null ? data.createMilestone(body) : data.updateMilestone(m.id, body),
+      () =>
+          m == null ? data.createMilestone(widget.goalId, body) : data.updateMilestone(m.id, body),
       m == null ? 'Milestone added' : 'Milestone saved',
     );
   }

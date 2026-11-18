@@ -8,11 +8,13 @@ import '../../domain/models.dart';
 import 'milestone_sheet.dart' show showNotices;
 
 const _entityLabel = {
+  'goals': 'Goals',
   'transactions': 'Entries',
   'milestones': 'Milestones',
   'reconciliations': 'Counts',
 };
 const _entitySingular = {
+  'goals': 'Goal',
   'transactions': 'Entry',
   'milestones': 'Milestone',
   'reconciliations': 'Count',
@@ -25,7 +27,10 @@ const _choices = [
 const _keepOrUse = [SegOption('keep', 'Keep current'), SegOption('replace', 'Use imported')];
 
 Future<void> openImportSheet(BuildContext context, Object? file, ImportPreview preview) =>
-    showKitSheet<void>(context, builder: (_) => ImportSheet(file: file, preview: preview));
+    showKitSheet<void>(
+      context,
+      builder: (_) => ImportSheet(file: file, preview: preview),
+    );
 
 /// Merge-import: preview what the file adds, then resolve conflicts like a file copy dialog.
 class ImportSheet extends ConsumerStatefulWidget {
@@ -81,14 +86,15 @@ class _ImportSheetState extends ConsumerState<ImportSheet> {
     final p = widget.preview;
     final totalNew = p.counts.values.fold(0, (s, c) => s + c.fresh);
     final totalSame = p.counts.values.fold(0, (s, c) => s + c.identical);
-    final nothingToDo =
-        totalNew == 0 && p.conflicts.isEmpty && !p.goalDiffers && !p.settingsDiffer;
+    final nothingToDo = totalNew == 0 && p.conflicts.isEmpty && !p.goalDiffers && !p.settingsDiffer;
     final muted = context.text.bodyMedium!.copyWith(color: t.textMuted);
     final head = context.text.labelSmall!;
     final num = context.text.bodyMedium!.num;
 
-    Widget cell(String s, TextStyle style) =>
-        SizedBox(width: 64, child: Text(s, style: style, textAlign: TextAlign.right));
+    Widget cell(String s, TextStyle style) => SizedBox(
+      width: 64,
+      child: Text(s, style: style, textAlign: TextAlign.right),
+    );
 
     return KitSheet(
       title: 'Import data',
@@ -192,7 +198,7 @@ class _ImportSheetState extends ConsumerState<ImportSheet> {
           if (p.goalDiffers) ...[
             const SizedBox(height: Space.s5),
             KitField(
-              label: 'Goal (name and amount)',
+              label: 'Goal you are working toward',
               child: KitSegmented<String>(
                 value: _goal,
                 options: _keepOrUse,

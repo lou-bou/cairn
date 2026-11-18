@@ -10,7 +10,9 @@ import 'store.dart';
 
 /// What the screens show: the server snapshot with the phone's pending changes applied on top.
 
-final snapshotProvider = Provider<Snapshot?>((ref) => ref.watch(dataProvider.select((d) => d.snapshot)));
+final snapshotProvider = Provider<Snapshot?>(
+  (ref) => ref.watch(dataProvider.select((d) => d.snapshot)),
+);
 
 /// True once there is anything to show (from cache or the network).
 final hasDataProvider = Provider<bool>((ref) => ref.watch(snapshotProvider) != null);
@@ -75,6 +77,25 @@ final balanceProvider = Provider<int>(
 final goalProvider = Provider<Goal?>((ref) {
   final goal = ref.watch(snapshotProvider.select((s) => s?.goal));
   return goal?.withBalance(ref.watch(balanceProvider));
+});
+
+/// Every goal with its milestones, in order; the balance is the phone's current one.
+final goalsProvider = Provider<List<Goal>>((ref) {
+  final goals = ref.watch(snapshotProvider.select((s) => s?.goals)) ?? const <Goal>[];
+  final balance = ref.watch(balanceProvider);
+  return [for (final g in goals) g.withBalance(balance)];
+});
+
+/// One goal by id: the active goal when [id] is null.
+final goalByIdProvider = Provider.family<Goal?, String?>((ref, id) {
+  final goals = ref.watch(goalsProvider);
+  if (id == null) {
+    final active = ref.watch(goalProvider);
+    if (active == null) return null;
+    final full = goals.where((g) => g.active).firstOrNull;
+    return active.withMilestones(full?.milestones ?? ref.watch(milestonesProvider));
+  }
+  return goals.where((g) => g.id == id).firstOrNull;
 });
 
 final milestonesProvider = Provider<List<Milestone>>(

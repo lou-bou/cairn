@@ -12,7 +12,12 @@ enum TxType {
 }
 
 class Category {
-  const Category({required this.id, required this.type, required this.name, required this.sortOrder});
+  const Category({
+    required this.id,
+    required this.type,
+    required this.name,
+    required this.sortOrder,
+  });
 
   final String id;
   final TxType type;
@@ -26,7 +31,12 @@ class Category {
     sortOrder: (j['sortOrder'] as num?)?.toInt() ?? 0,
   );
 
-  Map<String, dynamic> toJson() => {'id': id, 'type': type.code, 'name': name, 'sortOrder': sortOrder};
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'type': type.code,
+    'name': name,
+    'sortOrder': sortOrder,
+  };
 }
 
 /// The fixed category set, used until the server's list has been fetched once.
@@ -228,6 +238,7 @@ class Tx {
 class Milestone {
   const Milestone({
     required this.id,
+    this.goalId = '',
     required this.name,
     required this.note,
     required this.sortOrder,
@@ -241,6 +252,9 @@ class Milestone {
   });
 
   final String id;
+
+  /// The goal this milestone belongs to (empty from servers before goals could be added).
+  final String goalId;
   final String name;
   final String note;
   final int sortOrder;
@@ -256,6 +270,7 @@ class Milestone {
 
   factory Milestone.fromJson(Map<String, dynamic> j) => Milestone(
     id: j['id'] as String,
+    goalId: j['goalId'] as String? ?? '',
     name: j['name'] as String,
     note: j['note'] as String? ?? '',
     sortOrder: (j['sortOrder'] as num?)?.toInt() ?? 0,
@@ -270,6 +285,7 @@ class Milestone {
 
   Map<String, dynamic> toJson() => {
     'id': id,
+    'goalId': goalId,
     'name': name,
     'note': note,
     'sortOrder': sortOrder,
@@ -284,6 +300,7 @@ class Milestone {
 
   Milestone withThreshold(int threshold) => Milestone(
     id: id,
+    goalId: goalId,
     name: name,
     note: note,
     sortOrder: sortOrder,
@@ -299,6 +316,7 @@ class Milestone {
 
 class Goal {
   const Goal({
+    this.id = '',
     required this.name,
     required this.mode,
     required this.customOriginal,
@@ -310,8 +328,14 @@ class Goal {
     required this.balanceEur,
     required this.achievedAt,
     required this.celebrationSeen,
+    this.active = true,
+    this.archivedAt,
+    this.sortOrder = 0,
+    this.milestones = const [],
   });
 
+  /// Empty from servers before goals could be added (there was only one).
+  final String id;
   final String name;
 
   /// 'auto' (sum of milestones) or 'custom'.
@@ -328,7 +352,18 @@ class Goal {
   final String? achievedAt;
   final bool celebrationSeen;
 
+  /// The goal being worked toward right now. Exactly one is.
+  final bool active;
+  final String? archivedAt;
+  final int sortOrder;
+
+  /// This goal's own milestones, when listed with every goal (GET /api/goals).
+  final List<Milestone> milestones;
+
+  bool get archived => archivedAt != null;
+
   factory Goal.fromJson(Map<String, dynamic> j) => Goal(
+    id: j['id'] as String? ?? '',
     name: j['name'] as String? ?? 'Goal',
     mode: j['mode'] as String? ?? 'auto',
     customOriginal: (j['customOriginal'] as num?)?.toInt(),
@@ -340,9 +375,17 @@ class Goal {
     balanceEur: (j['balanceEur'] as num?)?.toInt() ?? 0,
     achievedAt: j['achievedAt'] as String?,
     celebrationSeen: j['celebrationSeen'] as bool? ?? true,
+    active: j['active'] as bool? ?? true,
+    archivedAt: j['archivedAt'] as String?,
+    sortOrder: (j['sortOrder'] as num?)?.toInt() ?? 0,
+    milestones: [
+      for (final m in (j['milestones'] as List? ?? const []))
+        Milestone.fromJson(Map<String, dynamic>.from(m as Map)),
+    ],
   );
 
   Map<String, dynamic> toJson() => {
+    'id': id,
     'name': name,
     'mode': mode,
     'customOriginal': customOriginal,
@@ -354,9 +397,14 @@ class Goal {
     'balanceEur': balanceEur,
     'achievedAt': achievedAt,
     'celebrationSeen': celebrationSeen,
+    'active': active,
+    'archivedAt': archivedAt,
+    'sortOrder': sortOrder,
+    'milestones': [for (final m in milestones) m.toJson()],
   };
 
   Goal withBalance(int balance) => Goal(
+    id: id,
     name: name,
     mode: mode,
     customOriginal: customOriginal,
@@ -368,6 +416,29 @@ class Goal {
     balanceEur: balance,
     achievedAt: achievedAt,
     celebrationSeen: celebrationSeen,
+    active: active,
+    archivedAt: archivedAt,
+    sortOrder: sortOrder,
+    milestones: milestones,
+  );
+
+  Goal withMilestones(List<Milestone> list) => Goal(
+    id: id,
+    name: name,
+    mode: mode,
+    customOriginal: customOriginal,
+    currency: currency,
+    rate: rate,
+    customEur: customEur,
+    amountEur: amountEur,
+    milestoneSumEur: milestoneSumEur,
+    balanceEur: balanceEur,
+    achievedAt: achievedAt,
+    celebrationSeen: celebrationSeen,
+    active: active,
+    archivedAt: archivedAt,
+    sortOrder: sortOrder,
+    milestones: list,
   );
 }
 

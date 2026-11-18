@@ -178,6 +178,50 @@ void main() {
     await splashShots(tester, dark: true, at: [515, 1080, 1550]);
   });
 
+  testWidgets('goals', (tester) async {
+    server.goals.add({'id': 'car', 'name': 'Car', 'mode': 'auto', 'archivedAt': null});
+    server.goals.add({
+      'id': 'boat',
+      'name': 'Sailing boat',
+      'mode': 'auto',
+      'archivedAt': '2026-11-01T00:00:00Z',
+    });
+    server.goalMilestones['boat'] = [];
+    server.goalMilestones['car'] = [
+      for (final (i, (name, euros)) in const [
+        ('Car', 16000),
+        ('Insurance (first year)', 2000),
+        ('Registration', 150),
+        ('Repair buffer', 1000),
+        ('Driving test and licence', 4000),
+      ].indexed)
+        {
+          'id': 'car-$i',
+          'name': name,
+          'note': '',
+          'sortOrder': i + 1,
+          'costOriginal': euros * 100,
+          'currency': 'EUR',
+          'rate': 275000,
+          'costEur': euros * 100,
+          'achievedAt': null,
+          'celebrationSeen': true,
+        },
+    ];
+    final c = await launch(tester);
+    await tester.tap(find.text('Goal').last);
+    await shot(tester, 'g1-goal-tab');
+    await tester.tap(find.text('Switch'));
+    await shot(tester, 'g2-switch-sheet');
+    await tester.tap(find.text('All goals').last);
+    await shot(tester, 'g3-goals');
+    await tester.tap(find.text('Car').first);
+    await shot(tester, 'g4-goal-not-active');
+    await tester.drag(find.text('Milestones'), const Offset(0, -600));
+    await shot(tester, 'g5-goal-milestones');
+    await close(tester, c);
+  });
+
   testWidgets('first run', (tester) async {
     final c = await launch(tester, connected: false);
     await shot(tester, '9-connect');
