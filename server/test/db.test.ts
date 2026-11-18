@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { migrate, openDb } from '../src/db/index.js';
+import { FIRST_GOAL_ID } from '@cairn/shared';
 
 describe('database', () => {
   const db = openDb(':memory:', { defaultRateMilli: 275000 });
@@ -32,8 +33,15 @@ describe('database', () => {
   });
 
   it('seeds the goal and milestones (spec §6)', () => {
-    const goal = db.prepare('SELECT name, mode, custom_eur FROM goal').get();
-    expect(goal).toEqual({ name: 'Study abroad (Germany)', mode: 'custom', custom_eur: 3_000_000 });
+    const goal = db.prepare('SELECT id, name, mode, custom_eur FROM goals').get();
+    expect(goal).toEqual({
+      id: FIRST_GOAL_ID,
+      name: 'Study abroad (Germany)',
+      mode: 'custom',
+      custom_eur: 3_000_000,
+    });
+    const active = db.prepare("SELECT value FROM settings WHERE key = 'active_goal_id'").pluck();
+    expect(active.get()).toBe(FIRST_GOAL_ID);
     const costs = db.prepare('SELECT cost_eur FROM milestones ORDER BY sort_order').pluck().all();
     expect(costs).toEqual([136500, 243500, 110000, 1190400, 700000]);
   });

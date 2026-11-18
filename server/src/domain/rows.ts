@@ -27,6 +27,7 @@ export interface TransactionRow {
 
 export interface MilestoneRow {
   id: string;
+  goal_id: string;
   name: string;
   note: string;
   sort_order: number;
@@ -39,6 +40,7 @@ export interface MilestoneRow {
 }
 
 export interface GoalRow {
+  id: string;
   name: string;
   mode: GoalMode;
   custom_original: number | null;
@@ -46,6 +48,8 @@ export interface GoalRow {
   rate: number | null;
   custom_eur: number | null;
   amount_eur: number;
+  sort_order: number;
+  archived_at: string | null;
   achieved_at: string | null;
   celebration_seen: 0 | 1;
 }
@@ -81,6 +85,7 @@ export const toTransaction = (r: TransactionRow): Transaction => ({
 
 export const toMilestone = (r: MilestoneRow, thresholdEur: number): Milestone => ({
   id: r.id,
+  goalId: r.goal_id,
   name: r.name,
   note: r.note,
   sortOrder: r.sort_order,
@@ -93,7 +98,13 @@ export const toMilestone = (r: MilestoneRow, thresholdEur: number): Milestone =>
   celebrationSeen: r.celebration_seen === 1,
 });
 
-export const toGoal = (r: GoalRow, milestoneSumEur: number, balanceEur: number): Goal => ({
+export const toGoal = (
+  r: GoalRow,
+  milestoneSumEur: number,
+  balanceEur: number,
+  activeId: string,
+): Goal => ({
+  id: r.id,
   name: r.name,
   mode: r.mode,
   customOriginal: r.custom_original,
@@ -105,6 +116,9 @@ export const toGoal = (r: GoalRow, milestoneSumEur: number, balanceEur: number):
   balanceEur,
   achievedAt: r.achieved_at,
   celebrationSeen: r.celebration_seen === 1,
+  active: r.id === activeId,
+  archivedAt: r.archived_at,
+  sortOrder: r.sort_order,
 });
 
 export const toReconciliation = (r: ReconciliationRow): Reconciliation => ({

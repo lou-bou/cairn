@@ -297,7 +297,7 @@ describe('goal rules (AC 5)', () => {
     expect(await goal()).toMatchObject({ mode: 'custom', customEur: 700000, amountEur: 700000 });
   });
 
-  it('with no milestones, any custom goal above 0 works, and auto is refused', async () => {
+  it('with no milestones, any custom goal above 0 works, and auto means no amount yet', async () => {
     for (const m of await milestones()) await call(app, 'DELETE', `/api/milestones/${m.id}`);
     await call(app, 'PUT', '/api/goal', {
       name: 'Laptop',
@@ -306,14 +306,12 @@ describe('goal rules (AC 5)', () => {
       currency: 'EUR',
     });
     expect((await goal()).amountEur).toBe(1);
-    const res = await call<{ error: string }>(
-      app,
-      'PUT',
-      '/api/goal',
-      { name: 'Laptop', mode: 'auto' },
-      400,
-    );
-    expect(res.error).toMatch(/Auto mode needs at least one milestone/);
+    const res = await call<Mutation<Goal>>(app, 'PUT', '/api/goal', {
+      name: 'Laptop',
+      mode: 'auto',
+    });
+    expect(res.data).toMatchObject({ mode: 'auto', amountEur: 0, achievedAt: null });
+    expect(res.notices).toEqual([]);
   });
 });
 

@@ -31,6 +31,8 @@ export interface Transaction {
 
 export interface Milestone {
   id: string;
+  /** The goal this milestone belongs to. */
+  goalId: string;
   name: string;
   note: string;
   sortOrder: number;
@@ -45,6 +47,7 @@ export interface Milestone {
 }
 
 export interface Goal {
+  id: string;
   name: string;
   mode: GoalMode;
   customOriginal: number | null;
@@ -57,6 +60,16 @@ export interface Goal {
   balanceEur: number;
   achievedAt: string | null;
   celebrationSeen: boolean;
+  /** The goal being worked toward right now. Exactly one goal is active. */
+  active: boolean;
+  /** Set when the goal is put away (finished or dropped). The active goal is never archived. */
+  archivedAt: string | null;
+  sortOrder: number;
+}
+
+/** A goal with its own milestones, as listed on the goals page. */
+export interface GoalDetail extends Goal {
+  milestones: Milestone[];
 }
 
 export interface Settings {

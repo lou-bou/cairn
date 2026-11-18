@@ -81,6 +81,10 @@ export const goalInput = z
   );
 export type GoalInput = z.input<typeof goalInput>;
 
+export const archiveInput = z.object({
+  archived: z.boolean('Say whether the goal is archived'),
+});
+
 export const celebrationsSeenInput = z.object({
   milestoneIds: z.array(z.string()).default([]),
   goal: z.boolean().default(false),

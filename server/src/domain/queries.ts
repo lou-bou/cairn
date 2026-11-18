@@ -1,4 +1,4 @@
-import { sumMinor, type Goal, type Milestone, type Settings } from '@cairn/shared';
+import { sumMinor, type Goal, type GoalDetail, type Milestone, type Settings } from '@cairn/shared';
 import type { Db } from '../db/index.js';
 import { toGoal, toMilestone, type GoalRow, type MilestoneRow } from './rows.js';
 
@@ -11,8 +11,46 @@ export function balanceEur(db: Db): number {
     .get() as number;
 }
 
-export function milestoneRows(db: Db): MilestoneRow[] {
-  return db.prepare('SELECT * FROM milestones ORDER BY sort_order, id').all() as MilestoneRow[];
+/** The goal being worked toward. There is always exactly one. */
+export function activeGoalId(db: Db): string {
+  return db
+    .prepare("SELECT value FROM settings WHERE key = 'active_goal_id'")
+    .pluck()
+    .get() as string;
+}
+
+export function setActiveGoal(db: Db, id: string): void {
+  db.prepare("UPDATE settings SET value = ? WHERE key = 'active_goal_id'").run(id);
+}
+
+export function goalRows(db: Db): GoalRow[] {
+  return db.prepare('SELECT * FROM goals ORDER BY sort_order, id').all() as GoalRow[];
+}
+
+export function findGoalRow(db: Db, id: string): GoalRow | undefined {
+  return db.prepare('SELECT * FROM goals WHERE id = ?').get(id) as GoalRow | undefined;
+}
+
+/** The active goal's row, or another goal's. */
+export function goalRow(db: Db, id: string = activeGoalId(db)): GoalRow {
+  return findGoalRow(db, id)!;
+}
+
+/** One goal's milestones in order: the active goal's unless [goalId] says otherwise. */
+export function milestoneRows(db: Db, goalId: string = activeGoalId(db)): MilestoneRow[] {
+  return db
+    .prepare('SELECT * FROM milestones WHERE goal_id = ? ORDER BY sort_order, id')
+    .all(goalId) as MilestoneRow[];
+}
+
+/** Every goal's milestones, goal by goal. */
+export function allMilestoneRows(db: Db): MilestoneRow[] {
+  return db
+    .prepare(
+      `SELECT m.* FROM milestones m JOIN goals g ON g.id = m.goal_id
+       ORDER BY g.sort_order, g.id, m.sort_order, m.id`,
+    )
+    .all() as MilestoneRow[];
 }
 
 /** Each threshold is the running sum of costs in order (spec §5). */
@@ -24,17 +62,25 @@ export function withThresholds(rows: MilestoneRow[]): Milestone[] {
   });
 }
 
-export function listMilestones(db: Db): Milestone[] {
-  return withThresholds(milestoneRows(db));
+export function listMilestones(db: Db, goalId?: string): Milestone[] {
+  return withThresholds(milestoneRows(db, goalId));
 }
 
-export function goalRow(db: Db): GoalRow {
-  return db.prepare('SELECT * FROM goal WHERE id = 1').get() as GoalRow;
+/** The active goal, or another one by id. */
+export function getGoal(db: Db, id: string = activeGoalId(db)): Goal {
+  const sum = sumMinor(milestoneRows(db, id).map((m) => m.cost_eur));
+  return toGoal(goalRow(db, id), sum, balanceEur(db), activeGoalId(db));
 }
 
-export function getGoal(db: Db): Goal {
-  const sum = sumMinor(milestoneRows(db).map((m) => m.cost_eur));
-  return toGoal(goalRow(db), sum, balanceEur(db));
+/** Every goal with its own milestones, for the goals page. */
+export function listGoals(db: Db): GoalDetail[] {
+  const balance = balanceEur(db);
+  const active = activeGoalId(db);
+  return goalRows(db).map((g) => {
+    const milestones = listMilestones(db, g.id);
+    const sum = sumMinor(milestones.map((m) => m.costEur));
+    return { ...toGoal(g, sum, balance, active), milestones };
+  });
 }
 
 const SETTING_KEYS = {

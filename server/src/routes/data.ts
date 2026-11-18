@@ -21,8 +21,16 @@ import {
 } from '@cairn/shared';
 import type { Db } from '../db/index.js';
 import { mutate } from '../domain/mutate.js';
-import { getSettings, goalRow, listMilestones, saveSettings } from '../domain/queries.js';
 import {
+  activeGoalId,
+  allMilestoneRows,
+  getSettings,
+  goalRows,
+  saveSettings,
+  setActiveGoal,
+} from '../domain/queries.js';
+import {
+  toMilestone,
   toReconciliation,
   toTransaction,
   type ReconciliationRow,
@@ -31,25 +39,29 @@ import {
 import { ApiError, parse } from '../errors.js';
 
 export function exportData(db: Db): ExportFile {
-  const g = goalRow(db);
   return {
     app: 'cairn',
     schemaVersion: EXPORT_SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
     settings: getSettings(db),
-    goal: {
+    activeGoalId: activeGoalId(db),
+    // amountEur is derived from the milestones or the custom amount, so it is not in the file.
+    goals: goalRows(db).map((g) => ({
+      id: g.id,
       name: g.name,
       mode: g.mode,
       customOriginal: g.custom_original,
       currency: g.currency,
       rate: g.rate,
       customEur: g.custom_eur,
+      sortOrder: g.sort_order,
+      archivedAt: g.archived_at,
       achievedAt: g.achieved_at,
       celebrationSeen: g.celebration_seen === 1,
-    },
+    })),
     // thresholdEur is derived from the order, so it is not part of the file.
-    milestones: listMilestones(db).map((m) => {
-      const { thresholdEur, ...rest } = m;
+    milestones: allMilestoneRows(db).map((r) => {
+      const { thresholdEur, ...rest } = toMilestone(r, 0);
       void thresholdEur;
       return rest;
     }),
@@ -107,6 +119,7 @@ export function transactionsCsv(db: Db): string {
 
 // ---- Merge import ----
 
+type Gl = ExportFile['goals'][number];
 type Tx = ExportFile['transactions'][number];
 type Ms = ExportFile['milestones'][number];
 type Rec = ExportFile['reconciliations'][number];
@@ -123,12 +136,21 @@ const txKey = (t: Tx) =>
     t.source,
     t.isAdjustment,
   ]);
-const msKey = (m: Ms) => JSON.stringify([m.name, m.note, m.costOriginal, m.currency, m.rate]);
+const glKey = (g: Gl) =>
+  JSON.stringify([g.name, g.mode, g.customOriginal, g.currency, g.rate, g.archivedAt !== null]);
+const msKey = (m: Ms) =>
+  JSON.stringify([m.goalId, m.name, m.note, m.costOriginal, m.currency, m.rate]);
 const recKey = (r: Rec) =>
   JSON.stringify([r.date, r.countedOriginal, r.currency, r.rate, r.appBalanceEur, r.differenceEur]);
 
 const describeTx = (t: Tx) =>
   `${t.note || t.categoryId} · ${t.date} · ${t.type === 'in' ? '+' : '−'}${formatMoney(t.amountOriginal, t.currency)}`;
+const describeGl = (g: Gl) =>
+  `${g.name} · ${
+    g.mode === 'custom' && g.customOriginal && g.currency
+      ? formatMoney(g.customOriginal, g.currency)
+      : 'sum of milestones'
+  }`;
 const describeMs = (m: Ms) => `${m.name} · ${formatMoney(m.costOriginal, m.currency)}`;
 const describeRec = (r: Rec) => `${r.date} · counted ${formatMoney(r.countedOriginal, r.currency)}`;
 
@@ -177,11 +199,13 @@ function validateFile(db: Db, raw: unknown): ExportFile {
 function analyze(db: Db, file: ExportFile) {
   const current = exportData(db);
   const plans = {
+    goals: classify(current.goals, file.goals, glKey),
     transactions: classify(current.transactions, file.transactions, txKey),
     milestones: classify(current.milestones, file.milestones, msKey),
     reconciliations: classify(current.reconciliations, file.reconciliations, recKey),
   };
   const describe = {
+    goals: describeGl,
     transactions: describeTx,
     milestones: describeMs,
     reconciliations: describeRec,
@@ -201,12 +225,13 @@ function analyze(db: Db, file: ExportFile) {
   });
   const preview: ImportPreview = {
     counts: {
+      goals: count(plans.goals),
       transactions: count(plans.transactions),
       milestones: count(plans.milestones),
       reconciliations: count(plans.reconciliations),
     },
     conflicts,
-    goalDiffers: JSON.stringify(current.goal) !== JSON.stringify(file.goal),
+    goalDiffers: current.activeGoalId !== file.activeGoalId,
     settingsDiffer:
       JSON.stringify({ ...current.settings, lastReconciledAt: null }) !==
       JSON.stringify({ ...file.settings, lastReconciledAt: null }),
@@ -281,6 +306,60 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
             result.settingsReplaced = true;
           }
 
+          // Goals first, so every milestone has its goal. A goal kept as a copy gets a new id,
+          // and its milestones follow it there.
+          const goalIdMap = new Map<string, string>();
+          const goalNames = new Set(goalRows(db).map((g) => g.name));
+          let nextGoalOrder = db
+            .prepare('SELECT COALESCE(MAX(sort_order), 0) FROM goals')
+            .pluck()
+            .get() as number;
+          const customEur = (g: Gl) =>
+            g.mode === 'custom' && g.customOriginal && g.currency && g.rate
+              ? toEurCents(g.customOriginal, g.currency, g.rate)
+              : null;
+          const goalParams = (g: Gl, overrides: Partial<Gl> = {}) => {
+            const merged = { ...g, ...overrides };
+            return {
+              ...merged,
+              customEur: customEur(merged),
+              seen: merged.celebrationSeen ? 1 : 0,
+            };
+          };
+          const insertGoal = db.prepare(
+            `INSERT INTO goals (id, name, mode, custom_original, currency, rate, custom_eur, sort_order, archived_at,
+             achieved_at, celebration_seen)
+           VALUES (@id, @name, @mode, @customOriginal, @currency, @rate, @customEur, @sortOrder, @archivedAt,
+             @achievedAt, @seen)`,
+          );
+          for (const g of [...plans.goals.fresh].sort((a, b) => a.sortOrder - b.sortOrder)) {
+            insertGoal.run(goalParams(g, { sortOrder: ++nextGoalOrder }));
+            goalNames.add(g.name);
+            result.added++;
+          }
+          for (const { incoming: g } of plans.goals.conflicts) {
+            const c = choice(g.id);
+            if (c === 'replace') {
+              db.prepare(
+                `UPDATE goals SET name = @name, mode = @mode, custom_original = @customOriginal, currency = @currency,
+                 rate = @rate, custom_eur = @customEur, archived_at = @archivedAt, achieved_at = @achievedAt,
+                 celebration_seen = @seen
+                 WHERE id = @id`,
+              ).run(goalParams(g));
+              result.replaced++;
+            } else if (c === 'keepBoth') {
+              const id = randomUUID();
+              const name = copyName(g.name, goalNames);
+              goalNames.add(name);
+              goalIdMap.set(g.id, id);
+              insertGoal.run(
+                goalParams(g, { id, name, sortOrder: ++nextGoalOrder, achievedAt: null }),
+              );
+              result.keptBoth++;
+            } else result.skipped++;
+          }
+          const goalOf = (m: Ms) => goalIdMap.get(m.goalId) ?? m.goalId;
+
           // Transactions
           const insertTx = db.prepare(
             `INSERT INTO transactions (id, type, date, note, amount_original, currency, rate, amount_eur, category_id,
@@ -305,29 +384,31 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
             result.added++;
           }
 
-          // Milestones: new ones go after the existing ones, in the file's order.
-          let nextOrder = db
-            .prepare('SELECT COALESCE(MAX(sort_order), 0) FROM milestones')
-            .pluck()
-            .get() as number;
+          // Milestones: new ones go after their goal's existing ones, in the file's order.
+          const lastOrder = db.prepare(
+            'SELECT COALESCE(MAX(sort_order), 0) FROM milestones WHERE goal_id = ?',
+          );
+          const nextOrder = (goalId: string) => (lastOrder.pluck().get(goalId) as number) + 1;
           const names = new Set(
             db.prepare('SELECT name FROM milestones').pluck().all() as string[],
           );
           const insertMs = db.prepare(
-            `INSERT INTO milestones (id, name, note, sort_order, cost_original, currency, rate, cost_eur, achieved_at,
-             celebration_seen)
-           VALUES (@id, @name, @note, @sortOrder, @costOriginal, @currency, @rate, @costEur, @achievedAt, @seen)`,
+            `INSERT INTO milestones (id, goal_id, name, note, sort_order, cost_original, currency, rate, cost_eur,
+             achieved_at, celebration_seen)
+           VALUES (@id, @goalId, @name, @note, @sortOrder, @costOriginal, @currency, @rate, @costEur, @achievedAt,
+             @seen)`,
           );
           const msParams = (m: Ms, overrides: Partial<Ms> = {}) => {
             const merged = { ...m, ...overrides };
             return {
               ...merged,
+              goalId: goalOf(merged),
               costEur: toEurCents(merged.costOriginal, merged.currency, merged.rate),
               seen: merged.celebrationSeen ? 1 : 0,
             };
           };
           for (const m of [...plans.milestones.fresh].sort((a, b) => a.sortOrder - b.sortOrder)) {
-            insertMs.run(msParams(m, { sortOrder: ++nextOrder }));
+            insertMs.run(msParams(m, { sortOrder: nextOrder(goalOf(m)) }));
             names.add(m.name);
             result.added++;
           }
@@ -346,16 +427,27 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
           for (const { incoming: m } of plans.milestones.conflicts) {
             const c = choice(m.id);
             if (c === 'replace') {
+              const params = msParams(m);
+              const moved =
+                db.prepare('SELECT goal_id FROM milestones WHERE id = ?').pluck().get(m.id) !==
+                params.goalId;
               db.prepare(
-                `UPDATE milestones SET name = @name, note = @note, cost_original = @costOriginal, currency = @currency,
-                 rate = @rate, cost_eur = @costEur WHERE id = @id`,
-              ).run(msParams(m));
+                `UPDATE milestones SET goal_id = @goalId, name = @name, note = @note, cost_original = @costOriginal,
+                 currency = @currency, rate = @rate, cost_eur = @costEur,
+                 sort_order = CASE WHEN @moved = 1 THEN @nextOrder ELSE sort_order END
+                 WHERE id = @id`,
+              ).run({ ...params, moved: moved ? 1 : 0, nextOrder: nextOrder(params.goalId) });
               result.replaced++;
             } else if (c === 'keepBoth') {
               const name = copyName(m.name, names);
               names.add(name);
               insertMs.run(
-                msParams(m, { id: randomUUID(), name, sortOrder: ++nextOrder, achievedAt: null }),
+                msParams(m, {
+                  id: randomUUID(),
+                  name,
+                  sortOrder: nextOrder(goalOf(m)),
+                  achievedAt: null,
+                }),
               );
               result.keptBoth++;
             } else result.skipped++;
@@ -393,26 +485,14 @@ export const dataRoutes: FastifyPluginAsync = async (app) => {
             } else result.skipped++;
           }
 
-          // The goal goes last so a custom amount is checked against the merged milestones by recompute().
+          // Which goal is active: this install's unless the file's is asked for.
           if (res.goal === 'replace' && preview.goalDiffers) {
-            const g = file.goal;
-            db.prepare(
-              `UPDATE goal SET name = ?, mode = ?, custom_original = ?, currency = ?, rate = ?, custom_eur = ?,
-               achieved_at = ?, celebration_seen = ? WHERE id = 1`,
-            ).run(
-              g.name,
-              g.mode,
-              g.customOriginal,
-              g.currency,
-              g.rate,
-              g.customOriginal && g.currency && g.rate
-                ? toEurCents(g.customOriginal, g.currency, g.rate)
-                : null,
-              g.achievedAt,
-              g.celebrationSeen ? 1 : 0,
-            );
+            const id = goalIdMap.get(file.activeGoalId) ?? file.activeGoalId;
+            setActiveGoal(db, id);
             result.goalReplaced = true;
           }
+          // The active goal is never archived.
+          db.prepare('UPDATE goals SET archived_at = NULL WHERE id = ?').run(activeGoalId(db));
           return result;
         },
         (r) => r,

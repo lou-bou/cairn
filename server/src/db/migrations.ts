@@ -1,5 +1,5 @@
 import type { Database } from 'better-sqlite3';
-import { CATEGORIES, DEFAULT_SOURCE, SOURCE_IDS } from '@cairn/shared';
+import { CATEGORIES, DEFAULT_SOURCE, FIRST_GOAL_ID, SOURCE_IDS } from '@cairn/shared';
 
 export interface MigrationContext {
   defaultRateMilli: number;
@@ -175,6 +175,66 @@ export const MIGRATIONS: Migration[] = [
       db.exec(
         `ALTER TABLE transactions ADD COLUMN source TEXT NOT NULL DEFAULT '${DEFAULT_SOURCE}'
            CHECK (source IN (${list}))`,
+      );
+    },
+  },
+  {
+    version: 5,
+    name: 'several goals',
+    up(db) {
+      // The single goal becomes the first of a list, keeps its milestones, and stays active.
+      db.exec(`
+        CREATE TABLE goals (
+          id                TEXT PRIMARY KEY,
+          name              TEXT NOT NULL,
+          mode              TEXT NOT NULL CHECK (mode IN ('auto', 'custom')),
+          custom_original   INTEGER CHECK (custom_original > 0),
+          currency          TEXT CHECK (currency IN ('EUR', 'DZD')),
+          rate              INTEGER CHECK (rate > 0),
+          custom_eur        INTEGER CHECK (custom_eur > 0),
+          amount_eur        INTEGER NOT NULL DEFAULT 0,
+          sort_order        INTEGER NOT NULL,
+          archived_at       TEXT,
+          achieved_at       TEXT,
+          celebration_seen  INTEGER NOT NULL DEFAULT 1 CHECK (celebration_seen IN (0, 1))
+        ) STRICT;
+
+        CREATE TABLE milestones_v5 (
+          id                TEXT PRIMARY KEY,
+          goal_id           TEXT NOT NULL REFERENCES goals (id) ON DELETE CASCADE,
+          name              TEXT NOT NULL,
+          note              TEXT NOT NULL DEFAULT '',
+          sort_order        INTEGER NOT NULL,
+          cost_original     INTEGER NOT NULL CHECK (cost_original > 0),
+          currency          TEXT NOT NULL CHECK (currency IN ('EUR', 'DZD')),
+          rate              INTEGER NOT NULL CHECK (rate > 0),
+          cost_eur          INTEGER NOT NULL CHECK (cost_eur >= 0),
+          achieved_at       TEXT,
+          celebration_seen  INTEGER NOT NULL DEFAULT 1 CHECK (celebration_seen IN (0, 1))
+        ) STRICT;
+      `);
+      db.prepare(
+        `INSERT INTO goals (id, name, mode, custom_original, currency, rate, custom_eur, amount_eur,
+           sort_order, archived_at, achieved_at, celebration_seen)
+         SELECT ?, name, mode, custom_original, currency, rate, custom_eur, amount_eur,
+           1, NULL, achieved_at, celebration_seen
+         FROM goal WHERE id = 1`,
+      ).run(FIRST_GOAL_ID);
+      db.prepare(
+        `INSERT INTO milestones_v5 (id, goal_id, name, note, sort_order, cost_original, currency, rate,
+           cost_eur, achieved_at, celebration_seen)
+         SELECT id, ?, name, note, sort_order, cost_original, currency, rate,
+           cost_eur, achieved_at, celebration_seen
+         FROM milestones`,
+      ).run(FIRST_GOAL_ID);
+      db.exec(`
+        DROP TABLE milestones;
+        ALTER TABLE milestones_v5 RENAME TO milestones;
+        CREATE INDEX milestones_goal ON milestones (goal_id, sort_order);
+        DROP TABLE goal;
+      `);
+      db.prepare("INSERT INTO settings (key, value) VALUES ('active_goal_id', ?)").run(
+        FIRST_GOAL_ID,
       );
     },
   },

@@ -1,20 +1,21 @@
 import type { Mutation } from '@cairn/shared';
 import type { Db } from '../db/index.js';
-import { recompute } from './recompute.js';
+import { recompute, type RecomputeOptions } from './recompute.js';
 
 /**
  * Run a write, recompute achievements, then read the result, all in one DB transaction,
- * so the goal and milestones can never be out of step with the data (spec §5).
+ * so the goals and milestones can never be out of step with the data (spec §5).
  */
 export function mutate<W, T>(
   db: Db,
   write: (notices: string[]) => W,
   read: (written: W) => T,
+  options: RecomputeOptions = {},
 ): Mutation<T> {
   return db.transaction(() => {
     const notices: string[] = [];
     const written = write(notices);
-    notices.push(...recompute(db));
+    notices.push(...recompute(db, undefined, options));
     return { data: read(written), notices };
   })();
 }
